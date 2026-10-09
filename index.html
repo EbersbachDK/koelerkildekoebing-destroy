@@ -1,0 +1,3254 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Kølerkildekøbing Destroy</title>
+<meta name="theme-color" content="#0c151e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KK Destroy">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+@font-face{font-family:'Saira Stencil One';font-weight:400;font-display:swap;src:url(fonts/saira-stencil.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:500;font-display:swap;src:url(fonts/barlow-500.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:600;font-display:swap;src:url(fonts/barlow-600.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:700;font-display:swap;src:url(fonts/barlow-700.woff2) format('woff2')}
+:root{
+  --bg:#0c151e; --panel:#132230; --panel-2:#1b2f40; --line:#28435a; --ink:#e8f0f6; --muted:#8fa6b8;
+  --accent:#ff8a3d; --accent-ink:#2a1200; --danger:#ff5a4e;
+  --display:'Saira Stencil One','Impact',sans-serif; --ui:'Barlow Condensed','Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--ui);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+#bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:.9;margin-right:6px}
+.brand .t1{font-family:var(--ui);font-weight:700;font-size:15px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.brand .t2{font-family:var(--display);font-size:24px;color:var(--accent);letter-spacing:.04em}
+.group{display:flex;gap:6px;align-items:center}
+.spacer{flex:1}
+button{font:inherit;color:inherit;cursor:pointer}
+.tool,.ctl{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;
+  padding:7px 12px;font-weight:600;font-size:16px;min-height:42px}
+.tool svg,.ctl svg{flex:none}
+.tool kbd{font-family:var(--ui);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.cats{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+.cat{border:0;background:none;color:var(--muted);font-weight:700;font-size:14px;padding:6px 10px;border-radius:8px;letter-spacing:.03em;white-space:nowrap}
+.cat[aria-pressed="true"]{background:var(--panel-2);color:var(--ink)}
+.cat[hidden],.tool[hidden],.cats[hidden]{display:none}
+.chip select{pointer-events:auto;font:inherit;font-weight:700;font-size:18px;color:var(--ink);background:transparent;border:0;padding:0;cursor:pointer}
+.chip select option{color:#111}
+.tool[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tool[aria-pressed="true"] kbd{color:var(--accent-ink);border-color:rgba(42,18,0,.4)}
+.ctl[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.tool:focus-visible,.ctl:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#stage{position:relative;flex:1;min-height:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#hud{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+.chip{background:rgba(12,21,30,.82);border:1px solid var(--line);border-radius:10px;padding:5px 11px;display:flex;flex-direction:column;line-height:1.05}
+.chip span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.chip b{font-size:20px;font-variant-numeric:tabular-nums}
+.chip input{pointer-events:auto;font:inherit;font-weight:700;font-size:18px;color:var(--ink);background:transparent;border:0;border-bottom:1px dashed var(--line);width:150px;padding:0}
+#toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:19px;
+  padding:7px 16px;border-radius:10px;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap}
+#toast.off{opacity:0;transform:translate(-50%,-8px)}
+#help{position:absolute;right:12px;bottom:12px;background:rgba(12,21,30,.7);color:var(--muted);font-size:14px;padding:5px 10px;border-radius:8px;pointer-events:none}
+#slowTag{position:absolute;right:12px;top:12px;font-family:var(--display);font-size:22px;color:var(--accent);text-shadow:0 2px 6px rgba(0,0,0,.5);pointer-events:none}
+.det{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:var(--danger);color:#fff;
+  border:0;border-radius:12px;padding:10px 18px;font-weight:700;font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.det b{background:rgba(0,0,0,.25);border-radius:6px;padding:0 7px}
+.det.beam{left:auto;right:14px;bottom:58px;transform:none;background:#57c785;color:#08200f;touch-action:none}
+.det.beam[aria-pressed="true"]{background:#b8ff6a}
+.det[hidden]{display:none}
+.modal{position:absolute;inset:0;background:rgba(6,12,18,.6);display:grid;place-items:center;padding:16px;z-index:5}
+.modal[hidden]{display:none}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(460px,100%);max-height:100%;overflow:auto;padding:16px 18px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sh-head h2{font-family:var(--display);color:var(--accent);font-size:28px;margin:0;font-weight:400;letter-spacing:.03em}
+.sheet .sub{color:var(--muted);margin:2px 0 12px;font-size:16px}
+#topList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+#topList li{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:baseline;padding:7px 10px;border-radius:9px;background:var(--panel-2);font-size:17px}
+#topList li .r{color:var(--muted);font-weight:700}
+#topList li .k{font-weight:700;font-variant-numeric:tabular-nums}
+#topList li small{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+#topList li.me{outline:2px solid var(--accent)}
+#topList li.empty{display:block;color:var(--muted);text-align:center}
+#mBar{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:rgba(12,21,30,.88);border:1px solid var(--accent);
+  border-radius:12px;padding:6px 8px 6px 14px;max-width:calc(100% - 24px);z-index:3}
+#mBar[hidden]{display:none}
+#mBar .mt{font-family:var(--display);color:var(--accent);font-size:18px;white-space:nowrap}
+#mBar .mg{font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mBar .mtime{font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+#mBar .ctl{min-height:32px;padding:4px 10px;font-size:14px}
+body.mission #toast{top:62px}
+.misTheme{margin:14px 0 6px;font-family:var(--display);font-size:18px;color:var(--muted);letter-spacing:.04em}
+.misGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.mis{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+.mis b{font-size:16px}
+.mis small{color:var(--muted);font-size:13px;line-height:1.25}
+.mis .st{color:#ffc93c;font-size:16px;letter-spacing:2px}
+.mis .st i{color:#3b4c5c;font-style:normal}
+.mis[disabled]{opacity:.45;cursor:not-allowed}
+.sheet.wide{width:min(760px,100%)}
+.res{font-size:44px;color:#ffc93c;letter-spacing:6px;text-align:center;margin:6px 0}
+.res i{color:#3b4c5c;font-style:normal}
+.resBtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.resBtns .ctl.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+body.mission .tool kbd{display:inline!important}
+@media (max-width:900px),(max-height:480px){
+  #bar{flex-wrap:nowrap;gap:6px}
+  .spacer{display:none}
+  .cat{padding:5px 7px;font-size:13px}
+  .tool[aria-pressed="true"] span.lbl{display:none!important}
+  .brand .t1{display:none}
+  .brand .t2{font-size:18px}
+  .tool,.ctl{padding:6px 8px!important;min-height:38px}
+  #ctlGrp{flex:1 1 0;min-width:0;overflow-x:auto;justify-content:flex-start;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  #ctlGrp::-webkit-scrollbar{display:none}
+  .ctl{flex:none}
+}
+.turn{display:none}
+@media (orientation:portrait){body.pwa .turn{display:flex;position:fixed;inset:0;z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:var(--bg);color:var(--ink);font-size:20px}}
+.turn svg{animation:turnRot 2.2s ease-in-out infinite}
+@keyframes turnRot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+#appVer{display:block;margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+.sheet.des{width:min(980px,100%)}
+.desWrap{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.desLeft{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+#desGrid{background:#9cc3dc;border-radius:8px;touch-action:none;cursor:crosshair;max-width:100%}
+.desPal{display:flex;gap:6px;flex-wrap:wrap}
+.desPal button{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel-2);border-radius:9px;padding:6px 10px;font-weight:600}
+.desPal button i{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,.3)}
+.desPal button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.desRight{flex:1;min-width:250px;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.desRight label{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.desRight input[type=text],.desRight select{font:inherit;font-weight:600;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.desRight select option{color:#111}
+.desRow{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.desRow span{width:60px}
+.desRow button{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);font-weight:800;font-size:18px}
+.desRow b{min-width:30px;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums}
+.desCols{display:flex;gap:5px}
+.desCols button{width:26px;height:26px;border-radius:7px;border:2px solid transparent}
+.desCols button[aria-pressed="true"]{border-color:var(--accent)}
+.desBtns{display:flex;gap:6px;flex-wrap:wrap}
+.desBtns button{border:1px solid var(--line);background:var(--panel-2);border-radius:9px;padding:6px 10px;font-weight:600}
+.desBtns .ctl.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+#desPrev{background:linear-gradient(#bcd8ea,#e6f0f5);border-radius:8px;width:190px;height:155px}
+#desList{display:flex;gap:6px;flex-wrap:wrap}
+#desList button{border:1px solid var(--line);background:var(--panel-2);border-radius:9px;padding:5px 9px;font-size:14px}
+#desList button.cur{border-color:var(--accent)}
+@media (max-width:1500px){.ctl:not(#bView) span.lbl{display:none}.ctl{padding:7px 10px}}
+@media (max-width:1400px){.tool span.lbl,.tool kbd{display:none}.tool[aria-pressed="true"] span.lbl{display:inline}.tool{padding:7px 10px}}
+@media (max-width:980px),(max-height:480px){.tool span.lbl,.ctl span.lbl,.tool kbd{display:none}#help{display:none}.tool,.ctl{padding:6px 11px}}
+@media (max-width:900px){#hud .chip:nth-child(2){display:none}}
+@media (max-width:560px){.brand .t1{font-size:11px}.brand .t2{font-size:17px}}
+@media (max-height:480px){#bar{padding:4px 10px;flex-wrap:nowrap}.brand .t1{font-size:11px}.brand .t2{font-size:18px}.tool,.ctl{min-height:38px}
+  .chip{padding:3px 9px}.chip b{font-size:16px}.chip span{font-size:10px}.chip input{font-size:15px;width:120px}#hud{left:8px;bottom:8px}}
+</style>
+</head>
+<body>
+<div class="turn" id="turnTip" role="alert">
+  <svg width="64" height="64" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="18.5" r="1" fill="currentColor"/></svg>
+  <b>Vend telefonen</b><span>Kølerkildekøbing Destroy spilles på langs.</span>
+</div>
+<div id="app">
+  <header id="bar">
+    <div class="brand"><span class="t1">Kølerkildekøbing</span><span class="t2">DESTROY</span></div>
+    <div class="group cats" id="cats" role="tablist" aria-label="Kategori">
+      <button class="cat" data-cat="eks" aria-pressed="true">Spræng</button>
+      <button class="cat" data-cat="natur" aria-pressed="false">Natur</button>
+      <button class="cat" data-cat="scifi" aria-pressed="false">Sci-fi</button>
+      <button class="cat" data-cat="monstre" aria-pressed="false">Monstre</button>
+    </div>
+    <div class="group" id="tools" role="group" aria-label="Våben">
+      <button class="tool" data-cat="eks" data-tool="raket" aria-pressed="true" title="Raket (1)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 20l3-7 9-9c2-2 4-2 4-2s0 2-2 4l-9 9-7 3z" fill="currentColor"/><path d="M7 13l-3 0 3-3M11 17v3l3-3" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+        <span class="lbl">Raket</span><kbd>1</kbd></button>
+      <button class="tool" data-cat="eks" data-tool="bombe" aria-pressed="false" title="Bombe (2)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="11" cy="14" r="7" fill="currentColor"/><path d="M15 8l3-3M18 3v2M20 5h-2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+        <span class="lbl">Bombe</span><kbd>2</kbd></button>
+      <button class="tool" data-cat="eks" data-tool="mega" aria-pressed="false" title="Megabombe (3)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><ellipse cx="12" cy="13" rx="9" ry="6" fill="currentColor"/><path d="M3 13h18M12 7V3" stroke="var(--bg)" stroke-width="1.5"/><path d="M12 3l-3 2h6z" fill="currentColor"/></svg>
+        <span class="lbl">Megabombe</span><kbd>3</kbd></button>
+      <button class="tool" data-cat="eks" data-tool="c4" aria-pressed="false" title="C4 – placér op til 8, tryk Udløs (4)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="2" fill="currentColor"/><rect x="6" y="10" width="8" height="5" fill="var(--bg)"/><circle cx="17.5" cy="12.5" r="1.6" fill="var(--danger)"/><path d="M8 7V4h8v3" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+        <span class="lbl">C4</span><kbd>4</kbd></button>
+      <button class="tool" data-cat="eks" data-tool="bor" aria-pressed="false" title="Boremaskine – hold nede (5)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M2 9h11v6H2z" fill="currentColor"/><path d="M13 10l8 2-8 2z" fill="currentColor"/><path d="M5 15v5h4v-5" fill="currentColor"/><path d="M14.5 10.4l1 3.2M17 11l1 2" stroke="var(--bg)" stroke-width="1.2"/></svg>
+        <span class="lbl">Bor</span><kbd>5</kbd></button>
+      <button class="tool" data-cat="natur" data-tool="skaelv" aria-pressed="false" hidden title="Jordskælv – tryk igen for kraftigere (1)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M2 13h4l2-6 3 11 3-14 3 12 2-5h3" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <span class="lbl">Jordskælv</span><kbd>1</kbd></button>
+      <button class="tool" data-cat="natur" data-tool="lyn" aria-pressed="false" hidden title="Lyn – rammer det højeste punkt (2)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M13 2L4 14h6l-2 8 10-13h-6z" fill="currentColor"/></svg>
+        <span class="lbl">Lyn</span><kbd>2</kbd></button>
+      <button class="tool" data-cat="natur" data-tool="ild" aria-pressed="false" hidden title="Ild – træ, tage og træer brænder (3)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z" fill="currentColor"/></svg>
+        <span class="lbl">Ild</span><kbd>3</kbd></button>
+      <button class="tool" data-cat="natur" data-tool="tornado" aria-pressed="false" hidden title="Tornado (4)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 5h18M5 9h14M7 13h10M9 17h7M11 21h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="lbl">Tornado</span><kbd>4</kbd></button>
+      <button class="tool" data-cat="natur" data-tool="tsunami" aria-pressed="false" hidden title="Tsunami (5)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M2 18c3 0 3-2 6-2s3 2 6 2 3-2 6-2M3 13c2-6 9-9 14-5-3-1-6 1-5 4 1 2 4 2 5 1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        <span class="lbl">Tsunami</span><kbd>5</kbd></button>
+      <button class="tool" data-cat="scifi" data-tool="laser" aria-pressed="false" hidden title="Orbital-laser – hold nede og træk (1)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2v13" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M6 20l6-4 6 4M8 22h8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="16" r="2" fill="currentColor"/></svg>
+        <span class="lbl">Laser</span><kbd>1</kbd></button>
+      <button class="tool" data-cat="scifi" data-tool="sorthul" aria-pressed="false" hidden title="Sort hul (2)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="4" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="12" cy="12" r="4.5" fill="currentColor"/></svg>
+        <span class="lbl">Sort hul</span><kbd>2</kbd></button>
+      <button class="tool" data-cat="scifi" data-tool="meteor" aria-pressed="false" hidden title="Meteor (3)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="16" cy="16" r="5" fill="currentColor"/><path d="M3 3l9 9M7 3l6 6M3 7l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span class="lbl">Meteor</span><kbd>3</kbd></button>
+      <button class="tool" data-cat="scifi" data-tool="ufo" aria-pressed="false" hidden title="UFO – træk for at styre, hold Trækstråle (4)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="3.5" fill="currentColor"/><path d="M7 10a5 5 0 0 1 10 0z" fill="currentColor"/><path d="M9 16l-2 5M15 16l2 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="lbl">UFO</span><kbd>4</kbd></button>
+      <button class="tool" data-cat="monstre" data-tool="gorilla" aria-pressed="false" hidden title="Kæmpegorilla – træk for at styre, træk op for at hoppe (1)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4" fill="currentColor"/><path d="M5 22c0-6 2-10 7-10s7 4 7 10z M3 18c1-4 2-6 4-6M21 18c-1-4-2-6-4-6" fill="currentColor" stroke="currentColor" stroke-width="1.6"/></svg>
+        <span class="lbl">Gorilla</span><kbd>1</kbd></button>
+      <button class="tool" data-cat="monstre" data-tool="kaiju" aria-pressed="false" hidden title="Kaiju – træk for at styre og spy ild (2)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 22l2-7-3-4 4-1 2-5 4-2 3 3-2 3 3 2-4 1 2 4-3 6z" fill="currentColor"/><path d="M17 9l5-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="lbl">Kaiju</span><kbd>2</kbd></button>
+      <button class="tool" data-cat="monstre" data-tool="tentakel" aria-pressed="false" hidden title="Tentakler fra undergrunden (3)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 22c0-6 4-8 2-13-1-3 2-6 4-4M14 22c0-5 5-6 4-11-1-3 2-5 3-3" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
+        <span class="lbl">Tentakler</span><kbd>3</kbd></button>
+    </div>
+    <div class="spacer"></div>
+    <div class="group" id="ctlGrp">
+      <button class="ctl" id="bView" aria-pressed="false" title="Skift mellem side og 3D (V)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5 M12 12v9 M12 12L4 7.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></svg><span class="lbl" id="bViewLbl">3D</span></button>
+      <button class="ctl" id="bPause" aria-pressed="false" title="Pause (mellemrum)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg><span class="lbl">Pause</span></button>
+      <button class="ctl" id="bSlow" aria-pressed="false" title="Slowmotion (S)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span class="lbl">Slowmo</span></button>
+      <button class="ctl" id="bDes" title="Byg selv (H)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l7-5 7 5v11M10 21v-6h4v6" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linejoin="round"/></svg><span class="lbl">Byg selv</span></button>
+      <button class="ctl" id="bMis" title="Missioner (O)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 22V3M5 4h12l-2 4 2 4H5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg><span class="lbl">Missioner</span></button>
+      <button class="ctl" id="bTop" title="Top 10 for denne by (T)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z M7 6H3v2a4 4 0 0 0 4 4 M17 6h4v2a4 4 0 0 1-4 4 M12 14v4 M8 21h8 M9 18h6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></svg><span class="lbl">Top 10</span></button>
+      <button class="ctl" id="bSound" aria-pressed="false" title="Lyd til/fra (M)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path id="sndWave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path id="sndOff" d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" hidden/></svg><span class="lbl">Lyd</span></button>
+      <button class="ctl" id="bReset" title="Genopbyg samme by (R)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span class="lbl">Genopbyg</span></button>
+      <button class="ctl" id="bNew" title="Ny by (N)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 21V10l5-3v14M8 21V4l7 3v14M15 21v-9l6 2v7M2 21h20" stroke="currentColor" stroke-width="1.8" fill="none"/></svg><span class="lbl">Ny by</span></button>
+    </div>
+  </header>
+  <div id="stage">
+    <canvas id="cv" aria-label="Byen"></canvas>
+    <div id="hud">
+      <div class="chip"><span>Skade</span><b id="hDmg">0 kr.</b></div>
+      <div class="chip"><span>Rekord</span><b id="hBest">–</b></div>
+      <div class="chip"><span>Faldne bygninger</span><b id="hFall">0 / 0</b></div>
+      <div class="chip"><span>Reddet</span><b id="hSaved">0 / 0</b></div>
+      <div class="chip"><span>Ramt</span><b id="hHit">0</b></div>
+      <div class="chip"><span>By</span><select id="themeSel" aria-label="Bytype"><option value="storby">Storby</option><option value="havneby">Havneby</option><option value="landsby">Landsby</option></select></div>
+      <div class="chip"><span>Frø (tryk Enter)</span><input id="seedIn" maxlength="24" spellcheck="false" aria-label="Byens frø"></div>
+    </div>
+    <div id="slowTag" hidden>SLOWMO</div>
+    <button class="det beam" id="bBeam" hidden title="Hold for trækstråle (B)">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 3h8l5 18H3z" fill="currentColor" opacity=".8"/></svg>
+      Trækstråle</button>
+    <button class="det" id="bDet" hidden title="Udløs alle C4-ladninger (D)">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2l2.2 5.2L20 6l-3.2 4.8L22 13l-5.6 1.4L18 20l-5-3-4 5-.8-5.8L2 15l4.6-3.4L3 7l5.6.6z" fill="currentColor"/></svg>
+      Udløs C4 <b id="detN">0</b></button>
+    <div id="mBar" hidden><span class="mt" id="mTitle"></span><span class="mg" id="mGoal"></span><span class="mtime" id="mTime"></span><button class="ctl" id="mQuit">Afslut</button></div>
+    <div class="modal" id="desPanel" hidden>
+      <div class="sheet wide des" role="dialog" aria-labelledby="desTitle">
+        <div class="sh-head"><h2 id="desTitle">Byg selv</h2><button class="ctl" id="desClose">Luk</button></div>
+        <p class="sub">Tegn facaden – den bruges på alle fire sider. Mur bærer, glas og åbninger gør huset svagere.</p>
+        <div class="desWrap">
+          <div class="desLeft">
+            <canvas id="desGrid" width="300" height="400" aria-label="Facade-gitter"></canvas>
+            <div class="desPal" id="desPal">
+              <button data-m="w" aria-pressed="true"><i id="palW"></i>Mur</button>
+              <button data-m="g" aria-pressed="false"><i style="background:#80b4dc"></i>Glas</button>
+              <button data-m="s" aria-pressed="false"><i style="background:#707882"></i>Stål</button>
+              <button data-m="." aria-pressed="false"><i style="background:transparent"></i>Åbning</button>
+            </div>
+          </div>
+          <div class="desRight">
+            <label>Navn <input type="text" id="desName" maxlength="20"></label>
+            <div class="desBtns"><button class="ctl pri" id="desPlace">Sæt ind i byen</button><button class="ctl" id="desSave">Gem</button><button class="ctl" id="desNew">Ny</button><button class="ctl" id="desDel">Slet</button></div>
+            <div class="desRow"><span>Bredde</span><button data-d="W" data-v="-1">−</button><b id="dW"></b><button data-d="W" data-v="1">+</button></div>
+            <div class="desRow"><span>Dybde</span><button data-d="D" data-v="-1">−</button><b id="dD"></b><button data-d="D" data-v="1">+</button></div>
+            <div class="desRow"><span>Højde</span><button data-d="H" data-v="-1">−</button><b id="dH"></b><button data-d="H" data-v="1">+</button></div>
+            <label>Mur <select id="desWall"><option value="mursten">Mursten</option><option value="beton">Beton</option><option value="træ">Træ</option></select></label>
+            <div class="desCols" id="desCols"></div>
+            <label>Tag <select id="desRoof"><option value="saddel">Saddeltag</option><option value="flad">Fladt tag</option></select></label>
+            <label><input type="checkbox" id="desFloors"> Etageadskillelse hver 4. lag</label>
+            <div class="desBtns"><button id="desFill">Fyld med mur</button><button id="desWin">Vinduesrækker</button><button id="desCopy">Kopiér nederste etage op</button></div>
+            <canvas id="desPrev" width="440" height="360" aria-label="Forhåndsvisning"></canvas>
+            <label><input type="checkbox" id="desMix"> Bland mine bygninger ind i nye byer</label>
+            <div id="desList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal" id="misPanel" hidden>
+      <div class="sheet wide" role="dialog" aria-labelledby="misTitle">
+        <div class="sh-head"><h2 id="misTitle">Missioner</h2><button class="ctl" id="misClose">Luk</button></div>
+        <p class="sub">Klar en mission for at låse den næste op. Højst 3 stjerner pr. mission.</p>
+        <div id="misList"></div>
+        <small id="appVer"></small>
+      </div>
+    </div>
+    <div class="modal" id="resPanel" hidden>
+      <div class="sheet" role="dialog" aria-labelledby="resTitle">
+        <div class="sh-head"><h2 id="resTitle"></h2></div>
+        <div class="res" id="resStars"></div>
+        <p class="sub" id="resText" style="text-align:center"></p>
+        <div class="resBtns"><button class="ctl pri" id="resNext">Næste mission</button><button class="ctl" id="resAgain">Prøv igen</button><button class="ctl" id="resList">Missioner</button><button class="ctl" id="resFree">Fri leg</button></div>
+      </div>
+    </div>
+    <div class="modal" id="topPanel" hidden>
+      <div class="sheet" role="dialog" aria-labelledby="topTitle">
+        <div class="sh-head"><h2 id="topTitle">Top 10</h2><button class="ctl" id="topClose">Luk</button></div>
+        <p class="sub" id="topSeed"></p>
+        <ol id="topList"></ol>
+      </div>
+    </div>
+    <div id="toast" class="off"></div>
+    <div id="help">Tryk for at affyre · træk for at flytte · knib eller hjul for zoom</div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+// =====================================================================
+// DATA – byens celler og materialer (uafhængigt af tegning)
+// =====================================================================
+const WX = 360, HY = 80, DZ = 32, GY = 8;          // bredde, højde, dybde (celler á 1 m); GY = første lag over jorden
+const LAYER = WX * DZ, N = WX * HY * DZ;
+const LOOSE = 0x80, SCORED = 0x40, MM = 0x3f;       // flag i mat-byten
+const AIR=0, BED=1, EARTH=2, GRASS=3, ASPH=4, SIDE=5, CONC=6, GLASS=7, BRICK=8, STEEL=9, WOOD=10, ROOF=11, LEAF=12, WATER=13;
+// hard = modstand mod eksplosion, str = bæreevne, w = vægt, val = kr. pr. celle
+const MAT = [];
+function defMat(id, name, col, hard, str, w, val){ MAT[id] = {name, col, hard, str, w, val}; }
+defMat(AIR,  'luft',       [0,0,0],       0,    0,    0,    0);
+defMat(BED,  'grundfjeld', [56,54,60],    99,   0,    0,    0);
+defMat(EARTH,'jord',       [118,84,54],   1.4,  0,    0,    0);
+defMat(GRASS,'græs',       [92,148,62],   1.2,  0,    0,    0);
+defMat(ASPH, 'asfalt',     [60,62,68],    1.6,  0,    0,    0);
+defMat(SIDE, 'fliser',     [168,164,156], 1.5,  0,    0,    0);
+defMat(CONC, 'beton',      [176,174,168], 1.0,  1.0,  1,    900);
+defMat(GLASS,'glas',       [118,168,204], 0.15, 0.08, 0.5,  1500);
+defMat(BRICK,'mursten',    [168,82,58],   0.75, 0.8,  1,    700);
+defMat(STEEL,'stål',       [112,120,130], 2.6,  4,    1.5,  2500);
+defMat(WOOD, 'træ',        [150,108,66],  0.45, 0.6,  0.5,  400);
+defMat(ROOF, 'tegl',       [150,60,44],   0.4,  0.3,  0.6,  500);
+defMat(LEAF, 'løv',        [72,132,58],   0.1,  0.02, 0.15, 50);
+defMat(WATER,'vand',       [46,104,156],  99,   0,    0,    0);
+const isGround = m => (m >= BED && m <= SIDE) || m === WATER;
+const structural = v => v !== 0 && !(v & LOOSE) && (v & MM) >= CONC;
+
+const mat = new Uint8Array(N);      // materiale + flag
+const bid = new Uint16Array(N);     // bygnings-id (0 = ingen)
+let bld = [null];                   // bygninger
+const idx = (x,y,z) => x + WX*(z + DZ*y);
+const ix = i => i % WX, iz = i => ((i / WX) | 0) % DZ, iy = i => (i / LAYER) | 0;
+
+function rngOf(seed){
+  let h = 1779033703 ^ seed.length;
+  for(let k=0;k<seed.length;k++){ h = Math.imul(h ^ seed.charCodeAt(k), 3432918353); h = h<<13 | h>>>19; }
+  let a = h >>> 0;
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a>>>15, 1|a); t = t + Math.imul(t ^ t>>>7, 61|t) ^ t; return ((t ^ t>>>14) >>> 0) / 4294967296; };
+}
+function hash3(x,y,z){ let h = Math.imul(x,374761393) ^ Math.imul(y,668265263) ^ Math.imul(z,1274126177); h = Math.imul(h ^ h>>>13, 1103515245); return (h ^ h>>>16) & 255; }
+
+// ---------- by-generator (Storby) ----------
+const SEED_WORDS = ['kølerkilde','havnegade','torvet','brugsen','kirkebakken','møllevej','skolegade','stationen','bryggeriet','åkanten'];
+function randomSeed(){ return SEED_WORDS[Math.floor(Math.random()*SEED_WORDS.length)] + '-' + Math.floor(100 + Math.random()*900); }
+
+let theme = 'storby';
+const HARB = 46;                                   // Havneby: havnen ligger i x < HARB
+const THEMES = {
+  storby:  {name:'Storby', x0:2, rows:[
+    {zA:4,  zB:14, hMin:2, hMax:7,  pT:.10, pK:.30, pW:.10, pP:0,   wMin:8, wMax:22, gMin:1, gMax:5,  tree:.7, skip:0, dMin:6, dMax:10},
+    {zA:16, zB:30, hMin:3, hMax:14, pT:.42, pK:.30, pW:0,   pP:0,   wMin:8, wMax:22, gMin:1, gMax:5,  tree:.7, skip:0, dMin:7, dMax:13}]},
+  havneby: {name:'Havneby', x0:HARB + 2, harbor:true, rows:[
+    {zA:4,  zB:14, hMin:2, hMax:5,  pT:0,   pK:.15, pW:.15, pP:.35, wMin:8, wMax:22, gMin:1, gMax:5,  tree:.5, skip:0, dMin:6, dMax:10},
+    {zA:16, zB:30, hMin:2, hMax:8,  pT:.08, pK:.20, pW:.05, pP:.40, wMin:10,wMax:24, gMin:1, gMax:5,  tree:.4, skip:0, dMin:8, dMax:14}]},
+  landsby: {name:'Landsby', x0:3, rows:[
+    {zA:4,  zB:14, hMin:1, hMax:3,  pT:0,   pK:0,   pW:.55, pP:0,   wMin:8, wMax:15, gMin:2, gMax:8,  tree:.95, skip:0, dMin:6, dMax:9},
+    {zA:16, zB:30, hMin:1, hMax:3,  pT:0,   pK:0,   pW:.40, pP:.10, wMin:8, wMax:18, gMin:3, gMax:10, tree:.95, skip:.3, dMin:7, dMax:11, church:true}]}
+};
+function genCity(seed, th, mixList){
+  th = th || theme;
+  const T = THEMES[th] || THEMES.storby;
+  const rnd = rngOf(th === 'storby' ? seed : th + ':' + seed), ri = (a,b) => a + Math.floor(rnd()*(b-a+1)), pick = a => a[Math.floor(rnd()*a.length)];
+  mat.fill(0); bid.fill(0); bld = [null];
+  // jord: grundfjeld, jordlag, overflade (vej, fortov, græs) – i Havneby vand i havnen
+  for(let y=0;y<GY;y++) for(let z=0;z<DZ;z++) for(let x=0;x<WX;x++){
+    let m = y===0 ? BED : y<GY-1 ? EARTH : (z<=2 ? ASPH : (z===3||z===15) ? SIDE : GRASS);
+    if(T.harbor && x < HARB && y >= GY-4 && z >= 5) m = y === GY-1 ? 0 : WATER;
+    if(T.harbor && x < HARB && y === GY-1 && z === 4) m = SIDE;              // kaj
+    if(m) mat[idx(x,y,z)] = m;
+  }
+  if(T.harbor){ crane(10, rnd, pick); crane(30, rnd, pick); }
+  let church = false;
+  for(const row of T.rows){
+    let x = T.x0 + ri(0,4);
+    while(true){
+      if(row.church && !church && x > WX*.4){
+        church = true;
+        if(x + 20 < WX-3){ building('kirke', x, x+19, 18, 27, 2, rnd, pick, ri); x += 20 + ri(3,6); continue; }
+      }
+      const w = ri(row.wMin, row.wMax);
+      if(x + w > WX-3) break;
+      if(rnd() < row.skip){ x += w; continue; }                                 // mark/have
+      if(mixList && mixList.length && rnd() < .25){                              // en af spillerens egne bygninger
+        const d = mixList[Math.floor(rnd()*mixList.length)], span = row.zB - row.zA + 1;
+        if(d.D <= span && x + d.W <= WX - 3){ buildDesign(d, x, row.zA + ((span - d.D) >> 1)); x += d.W + ri(Math.max(1, row.gMin), row.gMax); continue; }
+      }
+      const depth = ri(row.dMin, Math.min(row.dMax, row.zB-row.zA+1));
+      const z0 = row.zA + ri(0, row.zB-row.zA+1-depth);
+      const r = rnd();
+      let type, floors;
+      if(r < row.pT){ type='tårn'; floors = ri(Math.max(8,row.hMin), row.hMax); }
+      else if(r < row.pT+row.pK){ type='kontor'; floors = ri(row.hMin+1, Math.min(row.hMax,10)); }
+      else if(r < row.pT+row.pK+row.pW && w <= 16){ type='træhus'; floors = ri(1,2); }
+      else if(r < row.pT+row.pK+row.pW+row.pP){ type='pakhus'; floors = ri(Math.max(2,row.hMin), Math.min(5,row.hMax)); }
+      else if(th === 'storby' && row.zA===4 && r > .9 && w <= 14){ type='træhus'; floors = ri(1,2); }
+      else { type='mursten'; floors = ri(row.hMin, Math.min(row.hMax,6)); }
+      building(type, x, x+w-1, z0, z0+depth-1, floors, rnd, pick, ri);
+      let gap = rnd() < .22 && type==='mursten' ? 0 : ri(row.gMin, row.gMax);
+      if(gap >= 3 && rnd() < row.tree) tree(x+w-1+Math.ceil(gap/2), row.zA+1, ri(3,5));
+      x += w + gap;
+    }
+  }
+  for(let x=10;x<WX-4;x+=24) lamp(x, 3);
+  for(const b of bld) if(b){ b.n = b.n0; calibrate(b); }
+}
+// hver bygning får sin egen bæreevne-faktor, så dens svageste lag har SAFETY gange overskud
+const SAFETY = 1.15, OFFSET_TOL = .16;
+function calibrate(b){
+  const S = new Float64Array(HY), Mw = new Float64Array(HY);
+  for(let y=b.y0; y<HY; y++) for(let z=b.z0; z<=b.z1; z++) for(let x=b.x0; x<=b.x1; x++){
+    const i = idx(x,y,z); if(bid[i] !== b.id || !structural(mat[i])) continue;
+    const m = MAT[mat[i] & MM]; S[y] += m.str; Mw[y] += m.w;
+  }
+  let above = 0, need = 0;
+  for(let y=HY-1; y>=b.y0; y--){ if(above > 0 && S[y] > 0) need = Math.max(need, above / S[y]); above += Mw[y]; }
+  b.k = Math.max(20, need * SAFETY);
+  // hvor skæv er bygningen fra start (fx butiksruder i stueetagen)? Det bliver dens udgangspunkt
+  const R = new Float64Array(HY), RX = new Float64Array(HY), RZ = new Float64Array(HY), MX = new Float64Array(HY), MZ = new Float64Array(HY);
+  const x0 = new Float64Array(HY).fill(1e9), x1 = new Float64Array(HY).fill(-1e9), z0 = new Float64Array(HY).fill(1e9), z1 = new Float64Array(HY).fill(-1e9);
+  for(let y=b.y0; y<HY; y++) for(let z=b.z0; z<=b.z1; z++) for(let x=b.x0; x<=b.x1; x++){
+    const i = idx(x,y,z); if(bid[i] !== b.id || !structural(mat[i])) continue;
+    const m = MAT[mat[i] & MM]; R[y] += m.str; RX[y] += m.str*x; RZ[y] += m.str*z; MX[y] += m.w*x; MZ[y] += m.w*z;
+    if(m.str >= .5){ x0[y] = Math.min(x0[y], x); x1[y] = Math.max(x1[y], x); z0[y] = Math.min(z0[y], z); z1[y] = Math.max(z1[y], z); }
+  }
+  let ab = 0, ax = 0, az = 0, ox = 0, oz = 0;
+  for(let y=HY-1; y>=b.y0; y--){
+    if(ab > 40 && R[y] > 0 && x1[y] >= x0[y]){
+      ox = Math.max(ox, Math.abs(ax/ab - RX[y]/R[y]) / (x1[y]-x0[y]+1));
+      oz = Math.max(oz, Math.abs(az/ab - RZ[y]/R[y]) / (z1[y]-z0[y]+1));
+    }
+    ab += Mw[y]; ax += MX[y]; az += MZ[y];
+  }
+  b.tolX = Math.max(OFFSET_TOL, ox + .08); b.tolZ = Math.max(OFFSET_TOL, oz + .08);
+}
+
+function setCell(x,y,z,m,id){ if(x<0||x>=WX||y<0||y>=HY||z<0||z>=DZ) return false; const i=idx(x,y,z); mat[i]=m; bid[i]=id||0; return true; }
+
+function crane(x, rnd, pick){
+  // havnekran: to stålben på pæle i vandet, bom med kontravægt og førerhus
+  const id = bld.length, b = {id, type:'kran', x0:x-8, x1:x+16, z0:5, z1:6, y0:1, y1:GY+31, fm:STEEL, col:pick([[232,168,40],[214,60,50],[60,120,190]]), glass:[100,140,170], roof:[80,80,80], n0:0, n:0, fallen:false};
+  bld.push(b);
+  const put = (xx,y,z,m) => { if(setCell(xx,y,z,m,id)) b.n0++; };
+  for(const lx of [x, x+8]) for(let z=5; z<=6; z++){
+    for(let y=1; y<GY; y++) put(lx, y, z, CONC);
+    for(let y=GY; y<GY+28; y++) put(lx, y, z, STEEL);
+  }
+  for(let y=GY+6; y<GY+28; y+=7) for(let xx=x; xx<=x+8; xx++) put(xx, y, 5, STEEL);       // tværstivere
+  for(let xx=x-8; xx<=x+16; xx++) for(let z=5; z<=6; z++){ put(xx, GY+28, z, STEEL); if(xx%3===0) put(xx, GY+29, z, STEEL); }
+  for(let xx=x+1; xx<=x+4; xx++) for(let y=GY+24; y<GY+28; y++) put(xx, y, 6, (y===GY+26 && xx>x+1) ? GLASS : CONC);
+  for(let xx=x-8; xx<=x-5; xx++) for(let y=GY+29; y<GY+31; y++) put(xx, y, 5, CONC);     // kontravægt
+}
+function building(type, x0, x1, z0, z1, floors, rnd, pick, ri){
+  const id = bld.length, h = floors*4 + 1, W = x1-x0, D = z1-z0;
+  const pal = {
+    tårn:   {fm:CONC,  col:pick([[150,158,166],[128,140,152],[172,172,166]]), glass:pick([[104,160,198],[86,136,168],[118,178,190],[72,112,142]])},
+    kontor: {fm:CONC,  col:pick([[204,198,186],[186,182,172],[214,208,196],[170,166,160]]), glass:pick([[110,150,180],[96,128,150]])},
+    mursten:{fm:BRICK, col:pick([[168,82,58],[150,70,52],[196,156,104],[182,96,70],[204,184,142]]), glass:[100,140,170]},
+    træhus: {fm:WOOD,  col:pick([[176,58,48],[222,198,120],[228,228,222]]), glass:[100,140,170]},
+    pakhus: {fm:BRICK, col:pick([[150,70,52],[122,60,46],[170,112,72]]), glass:[90,120,150]},
+    kirke:  {fm:BRICK, col:[238,234,224], glass:[120,150,180]}
+  }[type];
+  const b = {id, type, x0, x1, z0, z1, y0:GY, y1:GY+h-1, fm:pal.fm, col:pal.col, glass:pal.glass,
+             roof: type === 'kirke' ? [168,58,42] : pick([[150,60,44],[72,72,78],[122,52,40]]), n0:0, n:0, fallen:false};
+  bld.push(b);
+  const put = (x,y,z,m) => { if(x<0||x>=WX||y<0||y>=HY||z<0||z>=DZ || mat[idx(x,y,z)]) return; if(setCell(x,y,z,m,id)) b.n0++; };
+  for(let ly=0; ly<h; ly++){
+    const y = GY + ly;
+    for(let z=z0; z<=z1; z++) for(let x=x0; x<=x1; x++){
+      const lx = x-x0, lz = z-z0, edgeX = lx===0||lx===W, edgeZ = lz===0||lz===D;
+      let m = 0;
+      if(ly % 4 === 0) m = type==='træhus' || (ly > 0 && (type==='mursten' || type==='pakhus' || type==='kirke')) ? WOOD : CONC;   // etageadskillelse (træbjælkelag i gamle huse)
+      else if(edgeX || edgeZ){
+        const t = edgeZ ? lx : lz, f = ly % 4;
+        if(edgeX && edgeZ) m = pal.fm;
+        else if(type==='tårn') m = t%4===0 ? CONC : GLASS;
+        else if(type==='kontor') m = (f>=2 && t%3!==0) ? GLASS : CONC;
+        else if(type==='mursten') m = (ly<4 && lz===0 && f<=2 && t%5!==0) ? GLASS : ((f>=2) && (t%4===1||t%4===2)) ? GLASS : BRICK;
+        else if(type==='pakhus') m = (f===2 && t%4===2) ? GLASS : BRICK;
+        else if(type==='kirke') m = (f>=1 && t%5===2) ? GLASS : BRICK;
+        else m = (f===2 && t%3===1) ? GLASS : WOOD;
+      }
+      else if(lx%6===0 && lz%6===0) m = type==='træhus' ? WOOD : CONC;   // søjler
+      if(m) put(x,y,z,m);
+    }
+  }
+  const ry = GY + h;
+  if(type==='kirke'){
+    // tårn i vestenden med spir og kors (bygges før taget, så taget ikke overskriver det)
+    const tx0 = x0, tx1 = x0 + 5, tz0 = z0 + ((D - 5) >> 1), tz1 = tz0 + 5, th = 25;
+    for(let ly=h; ly<th; ly++) for(let z=tz0; z<=tz1; z++) for(let x=tx0; x<=tx1; x++){
+      const ex = x===tx0||x===tx1, ez = z===tz0||z===tz1;
+      if(ly % 4 === 0) put(x, GY+ly, z, WOOD);
+      else if(ex || ez) put(x, GY+ly, z, (ly > th-4 && (ex ? (z-tz0)%5 : (x-tx0)%5) && !(ex && ez)) ? GLASS : BRICK);
+    }
+    let y = GY + th;
+    for(let k=0; ; k++){ const ins = k >> 1; if(tx0+ins > tx1-ins) break;
+      for(let z=tz0+ins; z<=tz1-ins; z++) for(let x=tx0+ins; x<=tx1-ins; x++) if(x===tx0+ins||x===tx1-ins||z===tz0+ins||z===tz1-ins) put(x, y+k, z, ROOF);
+      y = GY + th; if(k > 10) break; }
+    const cx = (tx0+tx1)>>1, cz = (tz0+tz1)>>1, top = GY + th + 7;
+    for(let k=0;k<4;k++) put(cx, top+k, cz, STEEL);
+    put(cx-1, top+2, cz, STEEL); put(cx+1, top+2, cz, STEEL);
+  }
+  if(type==='mursten' || type==='træhus' || type==='pakhus' || type==='kirke'){
+    // saddeltag med kip langs gaden: tagflader i tegl, gavle i facademateriale
+    for(let k=0; ; k++){
+      const za = z0+k, zb = z1-k; if(za > zb) break;
+      for(let z=za; z<=zb; z++) for(let x=x0; x<=x1; x++){
+        if(z===za || z===zb) put(x, ry+k, z, ROOF);
+        else if(x===x0 || x===x1) put(x, ry+k, z, pal.fm);
+      }
+    }
+  } else {
+    const cx = (x0+x1)>>1, cz = (z0+z1)>>1;
+    for(let y=ry; y<ry+3; y++) for(let z=cz-1; z<=cz+1; z++) for(let x=cx-2; x<=cx+2; x++) put(x,y,z,CONC);
+    if(type==='tårn'){ const ah = ri(4,10); for(let y=ry+3; y<ry+3+ah; y++) put(cx, y, cz, STEEL); }
+  }
+}
+function tree(x, z, th){
+  for(let y=GY; y<GY+th; y++) setCell(x,y,z,WOOD,0);
+  const cy = GY+th+1;
+  for(let dy=-2;dy<=2;dy++) for(let dz=-2;dz<=2;dz++) for(let dx=-2;dx<=2;dx++)
+    if(dx*dx+dy*dy+dz*dz <= 5) setCell(x+dx, cy+dy, z+dz, LEAF, 0);
+}
+function lamp(x, z){
+  for(let y=GY; y<GY+6; y++) setCell(x,y,z,STEEL,0);
+  setCell(x+1, GY+5, z, STEEL, 0); setCell(x+1, GY+4, z, GLASS, 0);
+}
+
+// =====================================================================
+// REGLER – score og faldne bygninger
+// =====================================================================
+const stats = {damage:0, fallen:0, saved:0, hit:0, people:0};
+function scoreCell(i){
+  const v = mat[i]; if(!v || (v & SCORED)) return;
+  const m = v & MM; if(m < CONC) return;
+  stats.damage += MAT[m].val; mat[i] = v | SCORED;
+}
+function loseStatic(i){
+  const b = bld[bid[i]]; if(!b) return;
+  b.n--;
+  if(!b.alarm && b.n < b.n0*0.985) b.alarm = true;      // beboerne evakuerer
+  if(!b.fallen && b.n < b.n0*0.45){ b.fallen = true; stats.fallen++; toast(pickFallText(b)); }
+}
+function pickFallText(b){
+  const t = {tårn:'Et højhus styrtede sammen!', kontor:'Kontorbygningen faldt!', mursten:'Et murstenshus faldt sammen!', træhus:'Træhuset er væk!'}[b.type];
+  return t || 'En bygning faldt!';
+}
+
+// =====================================================================
+// SIMULERING – struktur, faldende stykker, murbrokker, partikler
+// =====================================================================
+const G = 22;                    // tyngdekraft (celler/s²)
+const K_STR = 450;               // bæreevne-faktor
+const CRUSH_V = 7;               // fart hvor et faldende stykke knuser det, det rammer
+let seeds = [];                  // celler hvis nabolag skal struktur-tjekkes
+const stamp = new Uint32Array(N); let stampGen = 1;
+const Q = new Int32Array(N);
+const layR = new Float32Array(HY), laySX = new Float32Array(HY), laySZ = new Float32Array(HY);
+const layS = new Float32Array(HY), layM = new Float32Array(HY), layMX = new Float32Array(HY), layMZ = new Float32Array(HY),
+      layMin = new Int16Array(HY), layMax = new Int16Array(HY), layMinZ = new Int16Array(HY), layMaxZ = new Int16Array(HY);
+let bodies = [], parts = [], shots = [];
+let active = [], inAct = new Uint8Array(N);
+
+function seedAround(i){
+  seeds.push(i, i+1, i-1, i+WX, i-WX, i+LAYER, i-LAYER);
+}
+function activate(i){ if(i>=0 && i<N && !inAct[i] && (mat[i] & LOOSE)){ inAct[i]=1; active.push(i); } }
+function activateAbove(i){
+  const y = iy(i); if(y >= HY-1) return;
+  const x = ix(i), z = iz(i), up = i + LAYER;
+  for(let dz=-1; dz<=1; dz++) for(let dx=-1; dx<=1; dx++){
+    const xx=x+dx, zz=z+dz; if(xx<0||xx>=WX||zz<0||zz>=DZ) continue;
+    activate(up + dx + dz*WX);
+  }
+}
+function removeCell(i){
+  const v = mat[i]; if(!v) return;
+  const m = v & MM; if(m === BED || m === WATER) return;
+  scoreCell(i);
+  if(!(v & LOOSE)) loseStatic(i);
+  if(m === GLASS) glassBroken++;
+  mat[i] = 0; bid[i] = 0;
+  dirtyCol(ix(i)); seedAround(i); activateAbove(i);
+}
+function loosen(i){
+  const v = mat[i]; if(!v || (v & LOOSE)) return;
+  scoreCell(i); loseStatic(i);
+  mat[i] = mat[i] | LOOSE;
+  dirtyCol(ix(i)); seedAround(i); activate(i);
+}
+
+// --- struktur-analyse: sammenhæng med jorden + bæreevne pr. lag
+function analyze(){
+  if(!seeds.length) return;
+  const list = seeds; seeds = [];
+  const base = stampGen + 1;                      // hver flood får sit eget id; alt >= base er set i denne runde
+  let budget = 400000;
+  for(const s of list){
+    if(s < 0 || s >= N || stamp[s] >= base || !structural(mat[s])) continue;
+    budget -= flood(s);
+    if(budget < 0){ for(const r of list) seeds.push(r); break; }   // resten tages næste skridt
+  }
+}
+// løse brokker bærer kun, hvis stakken af brokker nedenunder ender i jorden eller i en anden struktur
+// (ikke i klumpen selv – ellers kan en klump "stå" på en brok, der ligger på klumpen)
+function looseBase(j){ while(j >= 0 && (mat[j] & LOOSE)) j -= LAYER; return j; }
+function flood(start){
+  const id = ++stampGen;
+  let head = 0, tail = 0, grounded = false;
+  const via = [];
+  Q[tail++] = start; stamp[start] = id;
+  while(head < tail){
+    const i = Q[head++], x = ix(i), y = iy(i), z = iz(i);
+    if(y === 0) grounded = true;
+    else { const b = mat[i-LAYER]; if(b){ if(isGround(b & MM)) grounded = true; else if((b & LOOSE) && via.length < 5000) via.push(i-LAYER); } }
+    if(x>0)    push(i-1);
+    if(x<WX-1) push(i+1);
+    if(z>0)    push(i-WX);
+    if(z<DZ-1) push(i+WX);
+    if(y>0)    push(i-LAYER);
+    if(y<HY-1) push(i+LAYER);
+  }
+  function push(j){ if(stamp[j] !== id && structural(mat[j])){ stamp[j] = id; Q[tail++] = j; } }
+  if(!grounded) for(const j0 of via){
+    const j = looseBase(j0);
+    if(j < 0 || (mat[j] && (isGround(mat[j] & MM) || stamp[j] !== id))){ grounded = true; break; }
+  }
+  const cells = Q.slice(0, tail);
+  if(!grounded) makeBody(cells);
+  else checkStress(cells);
+  return tail;
+}
+function checkStress(cells){
+  // hver bygning i en sammenhængende klump bærer sig selv (rækkehuse af forskellig højde)
+  const groups = new Map();
+  for(const i of cells){ const b = bid[i]; let g = groups.get(b); if(!g){ g = []; groups.set(b, g); } g.push(i); }
+  if(groups.size === 1){ checkGroup(cells); return; }
+  for(const [id, g] of groups){
+    // står bygningen selv på noget (jord, brokker, en anden bygning)? Ellers hænger den kun i naboen og river sig løs
+    let ok = false;
+    for(const i of g){
+      if(i < LAYER){ ok = true; break; }
+      let j = i - LAYER;
+      if(mat[j] & LOOSE) j = looseBase(j);
+      if(j < 0){ ok = true; break; }
+      const v = mat[j];
+      if(v && (isGround(v & MM) || bid[j] !== id)){ ok = true; break; }
+    }
+    if(!ok) makeBody(g);
+    else if(g.length > 4) checkGroup(g);
+  }
+}
+function checkGroup(cells){
+  let y0 = HY, y1 = -1;
+  for(const i of cells){ const y = iy(i); if(y<y0) y0=y; if(y>y1) y1=y; }
+  for(let y=y0; y<=y1; y++){ layS[y]=0; layR[y]=0; laySX[y]=0; laySZ[y]=0; layM[y]=0; layMX[y]=0; layMZ[y]=0; layMin[y]=9999; layMax[y]=-1; layMinZ[y]=99; layMaxZ[y]=-1; }
+  for(const i of cells){
+    const y = iy(i), x = ix(i), z = iz(i), m = MAT[mat[i] & MM], bb = bld[bid[i]];
+    const st = m.str * (bb ? bb.k : K_STR);
+    layS[y] += st; layR[y] += m.str; laySX[y] += m.str * x; laySZ[y] += m.str * z; layM[y] += m.w; layMX[y] += m.w * x; layMZ[y] += m.w * z;
+    if(m.str >= .5){ if(x < layMin[y]) layMin[y] = x; if(x > layMax[y]) layMax[y] = x; if(z < layMinZ[y]) layMinZ[y] = z; if(z > layMaxZ[y]) layMaxZ[y] = z; }
+  }
+  const gb = bld[bid[cells[0]]];   // træer og lygtepæle (ingen bygning) tjekkes kun for bæreevne
+  let above = 0, ax = 0, az = 0, fail = -1, why = '';
+  for(let y=y1; y>=y0; y--){
+    if(above > 0){
+      const cx = ax / above, cz = az / above;
+      if(layS[y] < above){ fail = y; why = 'bæreevne'; }
+      else if(above > 40 && gb){
+        // tyngdepunktet skal ligge inden for det bærende, og ikke for langt fra bæreevnens midte
+        const sx = laySX[y] / layR[y], sz = laySZ[y] / layR[y];
+        if(layMax[y] < 0 || cx < layMin[y]-.5 || cx > layMax[y]+.5 || cz < layMinZ[y]-.5 || cz > layMaxZ[y]+.5 ||
+           Math.abs(cx - sx) > gb.tolX*(layMax[y]-layMin[y]+1) || Math.abs(cz - sz) > gb.tolZ*(layMaxZ[y]-layMinZ[y]+1)){ fail = y; why = 'skævt'; }
+      }
+    }
+    above += layM[y]; ax += layMX[y]; az += layMZ[y];
+  }
+  if(fail < 0) return;
+  if(window.KKD_LOG) window.KKD_LOG.push({why, y:fail, b:bid[cells[0]], n:cells.length});
+  // laget svigter: etagen knuses (støv + brokker), toppen bliver fri og falder
+  const top = fail + 3;
+  let cnt = 0;
+  for(const i of cells){
+    const y = iy(i); if(y < fail || y > top) continue;
+    if(Math.random() < .55){ debrisFrom(i, 0, 0, 6); removeCell(i); } else loosen(i);
+    cnt++;
+  }
+  const s = cells[0]; seeds.push(s);
+  for(const i of cells){ const y = iy(i); if(y === top+1){ seeds.push(i); break; } }
+  dustAt(cellX(cells, fail), fail, Math.min(30, 4 + cnt/20), iz(cells[cells.length>>1]));
+  alarm(cellX(cells, fail), fail, 24);
+  rumble(Math.min(1, cnt/400));
+}
+function cellX(cells, y){ let s=0,n=0; for(const i of cells) if(iy(i)===y){ s+=ix(i); n++; } return n ? s/n : ix(cells[0]); }
+
+// --- faldende stykker (stive legemer, rotation om z-aksen)
+function makeBody(cells){
+  const n = cells.length;
+  if(n <= 4 || bodies.length >= 70){ for(const i of cells) loosen(i); return; }
+  let mw = 0, sx = 0, sy = 0;
+  for(const i of cells){ const w = MAT[mat[i] & MM].w + .05; mw += w; sx += ix(i)*w; sy += iy(i)*w; }
+  const cx = sx/mw, cy = sy/mw;
+  const lx = new Float32Array(n), ly = new Float32Array(n), lz = new Uint8Array(n), lm = new Uint8Array(n), lb = new Uint16Array(n);
+  let minX=1e9, maxX=-1e9, minY=1e9, maxY=-1e9;
+  for(let k=0;k<n;k++){
+    const i = cells[k];
+    lx[k] = ix(i) - cx; ly[k] = iy(i) - cy; lz[k] = iz(i); lm[k] = mat[i]; lb[k] = bid[i];
+    minX = Math.min(minX, lx[k]); maxX = Math.max(maxX, lx[k]); minY = Math.min(minY, ly[k]); maxY = Math.max(maxY, ly[k]);
+  }
+  for(const i of cells){ scoreCell(i); loseStatic(i); mat[i] = 0; bid[i] = 0; dirtyCol(ix(i)); seedAround(i); activateAbove(i); }
+  for(let k=0;k<n;k++) lm[k] |= SCORED;
+  let zs = 0; for(let k=0;k<n;k++) zs += lz[k];
+  const body = {zc:zs/n, cx, cy, a:0, vx:0, vy:0, w:0, n, mass:mw, lx, ly, lz, lm, lb, minX, maxX, minY, maxY,
+    halfW:(maxX-minX)/2 + .5, state:'fall', piv:null, life:0, maxV:0, sprite:null};
+  body.sprite = bodySprite(body);
+  bodies.push(body);
+  alarm(cx, cy, 18);
+}
+const hitBuf = new Int32Array(200000);
+function collide(b, cx, cy, a, pivX, pivY, pivR){
+  const c = Math.cos(a), s = Math.sin(a);
+  let n = 0, sumX = 0, sumY = 0, ground = 0, near = 0;
+  for(let k=0;k<b.n;k++){
+    const wx = cx + b.lx[k]*c - b.ly[k]*s, wy = cy + b.lx[k]*s + b.ly[k]*c;
+    const x = Math.round(wx), y = Math.round(wy);
+    if(x < 0 || x >= WX || y >= HY) continue;
+    let hit = false, gnd = false, j = -1;
+    if(y < 0){ hit = true; gnd = true; }
+    else { j = x + WX*(b.lz[k] + DZ*y); const v = mat[j]; if(v){ hit = true; gnd = isGround(v & MM) || (v & MM) === STEEL; } }
+    if(!hit) continue;
+    if(pivR && (wx-pivX)*(wx-pivX) + (wy-pivY)*(wy-pivY) < pivR*pivR){ near++; continue; }
+    if(n < hitBuf.length) hitBuf[n] = j;
+    n++; sumX += wx; sumY += wy; if(gnd) ground++;
+  }
+  return {n, sumX, sumY, ground, near};
+}
+function stepBody(b, dt){
+  b.life += dt;
+  if(b.life > 14 || b.cy < -40){ settle(b, 0); return; }
+  if(b.state === 'tip'){
+    const sg = Math.sign(b.w) || 1;
+    b.w += sg * (2.2 + 2.5*Math.abs(Math.sin(b.a))) * dt;
+    b.w = Math.max(-3.2, Math.min(3.2, b.w));
+    const dA = b.w * dt, dx = b.cx - b.piv[0], dy = b.cy - b.piv[1], c = Math.cos(dA), s = Math.sin(dA);
+    const ncx = b.piv[0] + dx*c - dy*s, ncy = b.piv[1] + dx*s + dy*c, na = b.a + dA;
+    const h = collide(b, ncx, ncy, na, b.piv[0], b.piv[1], 2.6);
+    if(h.n > 0){ settle(b, Math.abs(b.w) * Math.max(4, b.halfW)); return; }
+    b.cx = ncx; b.cy = ncy; b.a = na;
+    const sup = collide(b, b.cx, b.cy - .45, b.a, b.piv[0], b.piv[1], 2.6);
+    if(sup.near === 0 || Math.abs(b.a) > 1.75){ b.state = 'fall'; b.vx = -dx*b.w*0 + (b.w>0?-1:1)*Math.abs(b.w)*2; b.vy = -Math.abs(b.w)*2; }
+    return;
+  }
+  b.vy -= G*dt;
+  const ncx = b.cx + b.vx*dt, ncy = b.cy + b.vy*dt, na = b.a + b.w*dt;
+  const h = collide(b, ncx, ncy, na);
+  if(h.n === 0){ b.cx = ncx; b.cy = ncy; b.a = na; b.maxV = Math.max(b.maxV, -b.vy); return; }
+  // lander den kun på løse brokker, skubber den dem væk og falder videre
+  { const m = Math.min(h.n, hitBuf.length); let loose = 0;
+    for(let k=0;k<m;k++){ const j = hitBuf[k]; if(j >= 0 && (mat[j] & LOOSE)) loose++; }
+    if(loose === h.n && loose <= Math.max(6, b.n*.25)){
+      for(let k=0;k<m;k++){ const j = hitBuf[k]; if(Math.random() < .3) debrisFrom(j, (Math.random()-.5)*2, .3, 5); removeCell(j); }
+      b.vy *= .9; return;
+    }
+  }
+  const speed = Math.max(0, -b.vy), rel = h.sumX/h.n - b.cx;
+  const centered = Math.abs(rel) < .32*b.halfW;
+  if(speed > CRUSH_V && b.n > 120 && h.ground < h.n*.5 && centered){
+    // pandekage: det faldende stykke knuser det, det lander på
+    const m = Math.min(h.n, hitBuf.length);
+    let crushed = 0;
+    for(let k=0;k<m;k++){ const j = hitBuf[k]; if(j >= 0 && mat[j] && !isGround(mat[j] & MM) && (mat[j] & MM) !== STEEL){ if(Math.random()<.25) debrisFrom(j, b.vx, -speed*.3, 4); removeCell(j); crushed++; } }
+    if(crushed > 0){ b.vy *= .86; b.vx *= .9; if(Math.random() < .3) dustAt(h.sumX/h.n, h.sumY/h.n, 3, b.zc); return; }
+  }
+  if(!centered && Math.abs(b.a) < 1.35 && b.n > 8){
+    b.state = 'tip';
+    b.piv = [h.sumX/h.n, h.sumY/h.n];
+    b.w = b.w*.4 + Math.sign(rel) * Math.min(1.2, .25 + speed*.05);
+    b.vy = 0; b.vx = 0;
+    if(speed > 4) dustAt(b.piv[0], b.piv[1], 3, b.zc);
+    return;
+  }
+  settle(b, Math.max(speed, b.maxV*.6));
+}
+function settle(b, impact){
+  bodies.splice(bodies.indexOf(b), 1);
+  const c = Math.cos(b.a), s = Math.sin(b.a);
+  const tilted = Math.abs(Math.sin(b.a)) > .2;
+  let placed = 0, x0 = 1e9, x1 = -1e9;
+  for(let k=0;k<b.n;k++){
+    const x = Math.round(b.cx + b.lx[k]*c - b.ly[k]*s);
+    let y = Math.round(b.cy + b.lx[k]*s + b.ly[k]*c);
+    const z = b.lz[k];
+    if(x < 0 || x >= WX) continue;
+    if(y < 1) y = 1;
+    let v = b.lm[k];
+    if(impact > 14){ if(Math.random() < .3) continue; v |= LOOSE; }
+    else if(b.life < .25) v |= LOOSE;          // landede straks: bliv til brokker (bryder løkker)
+    else if(impact > 6 || tilted){ if(Math.random() < .45) v |= LOOSE; }
+    let j = -1;
+    for(let t=0; t<6 && y+t < HY; t++){ const q = x + WX*(z + DZ*(y+t)); if(!mat[q]){ j = q; break; } }
+    if(j < 0) continue;
+    mat[j] = v; bid[j] = b.lb[k]; placed++;
+    if(x < x0) x0 = x; if(x > x1) x1 = x;
+    dirtyCol(x);
+    if(v & LOOSE) activate(j); else seeds.push(j);
+  }
+  if(impact > 4 && placed){
+    alarm((x0+x1)/2, b.cy, 16);
+    dustAt((x0+x1)/2, b.cy + b.minY, Math.min(40, 4 + b.n/60), b.zc);
+    rumble(Math.min(1, b.n/1500 + impact/40));
+    shake(Math.min(10, b.n/300 + impact/6));
+  }
+}
+
+// --- løse murbrokker: falder som sand
+function caStep(){
+  if(!active.length) return;
+  const list = active; active = [];
+  const lim = Math.min(list.length, 60000);
+  for(let k=0;k<list.length;k++){
+    const i = list[k]; inAct[i] = 0;
+    if(k >= lim){ activate(i); continue; }
+    const v = mat[i]; if(!(v & LOOSE)) continue;
+    if(i < LAYER) continue;
+    const below = i - LAYER;
+    if(!mat[below]){ moveCell(i, below); continue; }
+    const x = ix(i), z = iz(i), r = (Math.random()*4)|0;
+    for(let t=0;t<4;t++){
+      const d = (r+t) & 3, dx = d===0?-1:d===1?1:0, dz = d===2?-1:d===3?1:0;
+      const xx = x+dx, zz = z+dz; if(xx<0||xx>=WX||zz<0||zz>=DZ) continue;
+      const side = i + dx + dz*WX;
+      if(!mat[side] && !mat[side-LAYER]){ moveCell(i, side-LAYER); break; }
+    }
+  }
+}
+function moveCell(a, b){
+  mat[b] = mat[a]; bid[b] = bid[a]; mat[a] = 0; bid[a] = 0;
+  dirtyCol(ix(a)); dirtyCol(ix(b));
+  activate(b); activateAbove(a);
+  if(a + LAYER < N && structural(mat[a+LAYER])) seeds.push(a+LAYER);
+}
+
+// --- eksplosioner og projektiler
+const TOOLS = {
+  raket: {r:4.5, p:2.0, name:'Raket'},
+  bombe: {r:7,   p:2.5, name:'Bombe'},
+  mega:  {r:12,  p:3.2, name:'Megabombe'},
+  meteor:{r:13,  p:4.0, name:'Meteor'},
+  c4:    {r:5,   p:3.0, name:'C4'}
+};
+let glassBroken = 0;                 // til glaslyd
+function explode(x, y, z, r, p){
+  const R = Math.ceil(r), xc = Math.round(x), yc = Math.round(y), zc = Math.round(z);
+  let removed = 0;
+  for(let dy=-R; dy<=R; dy++){ const yy = yc+dy; if(yy<1||yy>=HY) continue;
+    for(let dz=-R; dz<=R; dz++){ const zz = zc+dz; if(zz<0||zz>=DZ) continue;
+      for(let dx=-R; dx<=R; dx++){ const xx = xc+dx; if(xx<0||xx>=WX) continue;
+        const d = Math.sqrt(dx*dx+dy*dy+dz*dz); if(d > r) continue;
+        const i = xx + WX*(zz + DZ*yy), v = mat[i]; if(!v) continue;
+        const m = v & MM; if(m === BED || m === WATER) continue;
+        const q = d/r, dmg = p * (1 - q*q), hard = MAT[m].hard;
+        if(dmg > hard){ if(removed < 260 && Math.random() < .5) debrisFrom(i, dx/(d||1), dy/(d||1), 16 + 24*(1-d/r)); removed++; removeCell(i); }
+        else if(dmg > hard*.5 && m >= CONC) loosen(i);
+        else if(FLAM[m] && Math.random() < .3) ignite(i);
+      }
+    }
+  }
+  for(const b of bodies){
+    const dx = b.cx - x, dy = b.cy - y, d = Math.hypot(dx, dy) || 1;
+    if(d < r*2.2){ const f = (1 - d/(r*2.2)) * p * 14 / Math.sqrt(b.n/50 + 1); b.vx += dx/d*f; b.vy += dy/d*f; b.w += (Math.random()-.5)*f*.08; b.state = 'fall'; }
+  }
+  lifeBlast(x, y, z, r);
+  // ladninger i nærheden springer med
+  for(const c of charges) if(!c.armed && Math.hypot(c.x-x, c.y-y, c.z-z) < r + 1){ c.armed = true; later(.05 + Math.random()*.08, () => blowCharge(c)); }
+  blast(x, y, r, z);
+  boom(r/12);
+  shake(Math.min(14, r*1.1));
+}
+function pickZ(x, y){
+  if(x < 0 || x >= WX) return 9;
+  for(let yy = Math.min(HY-1, y); yy >= GY; yy--){ const f = frontZ[x + WX*yy]; if(f !== 255) return f; }
+  return 9;
+}
+function fire(tool, wx, wy, zIn){
+  wx = Math.max(0, Math.min(WX-1, wx));
+  const xi = Math.round(wx), yi = Math.max(0, Math.min(HY-1, Math.round(wy)));
+  const vis = frontZ[xi + WX*yi];
+  const z = zIn !== undefined ? zIn : vis !== 255 ? vis : pickZ(xi, yi);
+  const off = viewMode === 'iso' ? z*.5 : 0;          // i 3D ligger dybere celler længere til højre og op
+  if(tool === 'raket'){
+    const viewL = cam.x, viewR = cam.x + view.w/cam.s;
+    const fromLeft = wx + off > (viewL+viewR)/2;
+    const sx = (fromLeft ? viewL - 4 : viewR + 4) - off, sy = wy + 10 + Math.random()*6;
+    const d = Math.hypot(wx-sx, wy-sy);
+    shots.push({kind:'raket', x:sx, y:sy, z, vx:(wx-sx)/d*110, vy:(wy-sy)/d*110, t:0});
+  } else if(tool === 'meteor'){
+    const sx = wx - 70*(wx < WX/2 ? -1 : 1), sy = wy + 110, d = Math.hypot(wx - sx, wy - sy);
+    shots.push({kind:'meteor', x:sx, y:sy, z, vx:(wx-sx)/d*80, vy:(wy-sy)/d*80, t:0});
+    noise(2.2, 900, .3, 1.2, sat);
+  } else {
+    const top = cam.y + view.h/cam.s + 6 - off;
+    shots.push({kind:tool, x:wx, y:Math.max(top, wy+8), z, vx:0, vy:-12, t:0});
+  }
+  whoosh(tool);
+}
+// skærmpunkt -> mål. Sidevisning: forreste celle. 3D: følg sigtelinjen ind i byen til første celle
+function pickIso(u, v){
+  for(let z=0; z<DZ; z+=.25){
+    const x = Math.round(u - z*.5), y = Math.round(v - z*.5), zz = Math.round(z);
+    if(x<0 || x>=WX || y<0 || y>=HY || zz>=DZ) continue;
+    if(mat[idx(x,y,zz)]) return {x, y, z:zz};
+  }
+  return null;
+}
+function fireScreen(sx, sy){
+  if(placing){
+    const h = pickScreen(sx, sy), w = worldAt(sx, sy), d = placing; placing = null;
+    placeDesign(d, (h || w).x, h ? h.z >= 15 : false); return;
+  }
+  if(tool === 'bor' || tool === 'laser' || tool === 'ufo' || MON_TOOLS[tool]) return;
+  const h = pickScreen(sx, sy), u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s;
+  act(tool, h, viewMode === 'iso' ? {x: u - 4.5, y: v - 4.5, z: 9} : {x: u, y: v});
+}
+// udfør et våben mod et mål (h = ramt celle eller null, w = punkt i verden). Tæller forbruget i missioner.
+function act(t, h, w){
+  w = w || h;
+  if(mission && (mission.result || !(t in mission.uses))) return false;
+  if(!w && t !== 'skaelv' && t !== 'tsunami') return false;
+  switch(t){
+    case 'c4':
+      if(!h){ toast('Sæt C4 på en bygning'); return false; }
+      if(charges.length >= C4_MAX || charges.some(c => c.i === idx(h.x, h.y, h.z))) return placeC4(h);
+      if(!useTool(t)) return false;
+      return placeC4(h);
+    case 'skaelv': if(!useTool(t)) return false; startQuake(); return true;
+    case 'tsunami': if(!useTool(t)) return false; startTsunami(); return true;
+    case 'lyn': if(!useTool(t)) return false; strikeLightning(h ? h.x : w.x); return true;
+    case 'tornado': if(!useTool(t)) return false; startTornado(h ? h.x : w.x); return true;
+    case 'ild':
+      if(!h || !igniteAround(h, 2)){ toast('Ild fænger kun i træ, tage og træer'); return false; }
+      if(!useTool(t)){ for(const [i] of burning) if(Math.abs(ix(i) - h.x) <= 2 && Math.abs(iy(i) - h.y) <= 2) burning.delete(i); return false; }
+      return true;
+    case 'sorthul':
+      if(!useTool(t)) return false;
+      spawnHole(h || {x: Math.round(w.x), y: Math.max(GY + 4, Math.round(w.y)), z: w.z !== undefined ? w.z : 9}); return true;
+    case 'gorilla': case 'kaiju': case 'tentakel':
+      if(monsterOf(t)){ steerMonster(t, w.x, w.y); return true; }
+      if(!useTool(t)) return false;
+      spawnMonster(t, w.x); return true;
+    case 'ufo':
+      if(!ufo && !useTool(t)) return false;
+      ufoAt(w.x, w.y); return true;
+    default:
+      if(!TOOLS[t]) return false;
+      if(!useTool(t)) return false;
+      fire(t, (h || w).x, (h || w).y, h ? h.z : (viewMode === 'iso' ? 9 : undefined));
+      return true;
+  }
+}
+function stepShots(dt){
+  for(let k=shots.length-1; k>=0; k--){
+    const s = shots[k];
+    s.t += dt;
+    if(s.kind !== 'raket' && s.kind !== 'meteor') s.vy -= 40*dt;
+    const steps = Math.ceil(Math.hypot(s.vx, s.vy)*dt / .5);
+    let hit = false;
+    for(let q=0; q<steps && !hit; q++){
+      s.x += s.vx*dt/steps; s.y += s.vy*dt/steps;
+      const x = Math.round(s.x), y = Math.round(s.y);
+      if(y < 1) hit = true;
+      else if(x >= 0 && x < WX && y < HY && mat[idx(x,y,s.z)]){
+        // meteoren slår igennem bygninger og eksploderer først i jorden
+        if(s.kind === 'meteor' && !isGround(mat[idx(x,y,s.z)] & MM)){
+          for(let dy=-2; dy<=2; dy++) for(let dz=-2; dz<=2; dz++) for(let dx=-2; dx<=2; dx++){
+            if(dx*dx+dy*dy+dz*dz > 5) continue; const xx = x+dx, yy = y+dy, zz = s.z+dz;
+            if(xx<0||xx>=WX||yy<1||yy>=HY||zz<0||zz>=DZ) continue; const j = idx(xx,yy,zz);
+            if(mat[j] && !isGround(mat[j] & MM)){ if(Math.random() < .2) debrisFrom(j, s.vx/80, -s.vy/80, 14); removeCell(j); }
+          }
+          shake(4);
+        } else hit = true;
+      }
+    }
+    if(s.kind === 'raket' && Math.random() < .8) parts.push({k:'smoke', z:s.z, x:s.x - s.vx*.01, y:s.y - s.vy*.01, vx:(Math.random()-.5)*2, vy:1+Math.random()*2, life:1.2, max:1.2, r:.8});
+    if(hit){ const T = TOOLS[s.kind]; explode(s.x, s.y, s.z, T.r, T.p); shots.splice(k,1); }
+    else if(s.t > 6 || s.x < -60 || s.x > WX+60) shots.splice(k,1);
+    if(s.kind === 'meteor'){
+      for(let q=0;q<3 && parts.length < 2900;q++) parts.push({k: q ? 'fire' : 'smoke', z:s.z, x:s.x - s.vx*.02*q, y:s.y - s.vy*.02*q, vx:(Math.random()-.5)*3, vy:(Math.random()-.5)*3, life:q ? .5 : 1.6, max:q ? .5 : 1.6, r: q ? 1.4 : 1.6});
+      if(hit){ igniteAround({x:Math.round(s.x), y:Math.max(1, Math.round(s.y)), z:s.z}, 4); shake(22); }
+    }
+  }
+}
+
+// --- C4: op til 8 ladninger, udløses samlet
+const C4_MAX = 8;
+let charges = [], timers = [];
+function later(t, fn){ timers.push({t, fn}); }
+function stepTimers(dt){ for(let k=timers.length-1; k>=0; k--){ const q = timers[k]; q.t -= dt; if(q.t <= 0){ timers.splice(k,1); q.fn(); } } }
+function placeC4(h){
+  if(!h){ toast('Sæt C4 på en bygning'); return false; }
+  if(charges.length >= C4_MAX){ toast(`Højst ${C4_MAX} ladninger – tryk Udløs`); return false; }
+  const i = idx(h.x, h.y, h.z);
+  if(charges.some(c => c.i === i)) return false;
+  charges.push({x:h.x, y:h.y, z:h.z, i, armed:false});
+  clickSnd();
+  return true;
+}
+function detonate(){
+  if(!charges.length || charges.some(c => c.armed)) return;
+  for(const c of charges) c.armed = true;
+  for(let k=0;k<3;k++) later(k*.22, () => beep(1400 + k*350));
+  charges.forEach((c, k) => later(.75 + k*.07, () => blowCharge(c)));
+}
+function blowCharge(c){
+  const k = charges.indexOf(c); if(k < 0) return;
+  charges.splice(k, 1);
+  const T = TOOLS.c4; explode(c.x, c.y, c.z, T.r, T.p);
+}
+function stepCharges(){
+  // en ladning, hvis celle forsvinder (uden at den er udløst), falder af
+  for(let k=charges.length-1; k>=0; k--){ const c = charges[k]; if(!c.armed && !mat[c.i]){ charges.splice(k,1); sparks(c.x, c.y, c.z - .5, 4); } }
+}
+
+// --- boremaskine: hold nede, borer sig ind i det, man peger på
+const drill = {on:false, sx:0, sy:0, acc:0, hit:null, load:0};
+function stepDrill(dt){
+  if(drill.on && !spendTime('bor', dt)) drill.on = false;
+  if(!drill.on){ drill.hit = null; drill.load = 0; drillSound(false, 0); return; }
+  drill.acc += dt;
+  while(drill.acc >= .05){ drill.acc -= .05; drillTick(pickScreen(drill.sx, drill.sy)); }
+  drillSound(true, drill.load);
+}
+function drillTick(h){
+  drill.hit = h;
+  if(!h){ drill.load = 0; return 0; }
+  let hard = 0, n = 0;
+  for(let dy=-2; dy<=2; dy++) for(let dz=-1; dz<=2; dz++) for(let dx=-2; dx<=2; dx++){
+    if(dx*dx + dy*dy + dz*dz > 2.9) continue;
+    const x = h.x+dx, y = h.y+dy, z = h.z+dz;
+    if(x<0 || x>=WX || y<1 || y>=HY || z<0 || z>=DZ) continue;
+    const i = idx(x,y,z), v = mat[i]; if(!v) continue;
+    const m = v & MM; if(m === BED || m === WATER) continue;
+    if(m === STEEL && Math.random() > .25){ hard += 2; continue; }
+    hard += MAT[m].hard; n++;
+    if(Math.random() < .3) debrisFrom(i, Math.random()-.5, .6, 7);
+    removeCell(i);
+  }
+  drill.load = Math.min(1, hard/10);
+  if(n) alarm(h.x, h.y, 10);
+  if(hard > 1) sparks(h.x, h.y, h.z - .5, 2 + Math.round(drill.load*4));
+  return n;
+}
+function sparks(x, y, z, n){
+  for(let k=0; k<n && parts.length < 3000; k++) parts.push({k:'spark', x, y, z, vx:(Math.random()-.5)*22, vy:Math.random()*14, life:.25 + Math.random()*.2, max:.45});
+}
+function pickScreen(sx, sy){
+  const u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s;
+  if(viewMode === 'iso') return pickIso(u, v);
+  const x = Math.round(u), y = Math.round(v);
+  if(x<0 || x>=WX || y<0 || y>=HY) return null;
+  const f = frontZ[x + WX*y]; return f === 255 ? null : {x, y, z:f};
+}
+
+// --- partikler (kun grafik)
+function debrisFrom(i, dx, dy, sp){
+  if(parts.length > 2600) return;
+  const x = ix(i), y = iy(i), z = iz(i);
+  const c = cellColor(mat[i] & MM, bid[i], x, y, z, false);
+  const a = Math.atan2(dy, dx) + (Math.random()-.5)*1.4, v = sp*(.4 + Math.random()*.8);
+  parts.push({k:'deb', x, y, z, vx:Math.cos(a)*v, vy:Math.sin(a)*v + 4, life:1.6 + Math.random(), max:2.6, s:.5 + Math.random()*.6,
+    col:`rgb(${c & 255},${(c>>8) & 255},${(c>>16) & 255})`, rot:Math.random()*6, vr:(Math.random()-.5)*12});
+}
+function dustAt(x, y, n, z){
+  if(z === undefined) z = 9;
+  for(let k=0;k<n && parts.length < 3000;k++){
+    const life = 2 + Math.random()*2.5;
+    parts.push({k:'dust', x:x + (Math.random()-.5)*n*.7, y:y + Math.random()*2, z:z + (Math.random()-.5)*4, vx:(Math.random()-.5)*7, vy:Math.random()*3, life, max:life, r:1.2 + Math.random()*2.2});
+  }
+}
+function blast(x, y, r, z){
+  parts.push({k:'flash', x, y, z, life:.25, max:.25, r:r*1.9});
+  parts.push({k:'ring', x, y, z, life:.45, max:.45, r:r});
+  for(let k=0;k<Math.round(r*2.2);k++){
+    const a = Math.random()*Math.PI*2, v = r*(1 + Math.random()*2);
+    parts.push({k:'fire', x, y, z, vx:Math.cos(a)*v, vy:Math.sin(a)*v*.7 + r*.3, life:.5 + Math.random()*.4, max:.9, r:r*(.25 + Math.random()*.3)});
+  }
+  dustAt(x, y, Math.round(r*1.6), z);
+}
+function stepParts(dt){
+  for(let k=parts.length-1; k>=0; k--){
+    const p = parts[k];
+    p.life -= dt;
+    if(p.life <= 0){ parts[k] = parts[parts.length-1]; parts.pop(); continue; }
+    if(p.k === 'deb'){
+      p.vy -= G*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.rot += p.vr*dt;
+      const x = Math.round(p.x), y = Math.round(p.y);
+      if(y < 1 || (x>=0 && x<WX && y<HY && p.vy < 0 && mat[idx(x, y, Math.max(0, Math.min(DZ-1, p.z|0)))])){ p.vy = -p.vy*.3; p.vx *= .6; p.y += .3; p.vr *= .5; }
+    } else if(p.k === 'dust' || p.k === 'smoke'){
+      p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= .985; p.vy = p.vy*.98 + .6*dt; p.r += dt*1.1;
+    } else if(p.k === 'fire'){
+      p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= .9; p.vy = p.vy*.9 + 3*dt;
+    } else if(p.k === 'spark'){
+      p.vy -= G*dt; p.x += p.vx*dt; p.y += p.vy*dt;
+    } else if(p.k === 'flame'){
+      p.x += p.vx*dt; p.y += p.vy*dt; p.r *= Math.pow(.4, dt);
+    } else if(p.k === 'suck'){
+      p.ang += dt*(4 + 12/(p.rad + 1)); p.rad = Math.max(0, p.rad - dt*(6 + p.rad*1.5));
+      p.x = p.hx.x + Math.cos(p.ang)*p.rad; p.y = p.hx.y + Math.sin(p.ang)*p.rad*.6; p.z = p.hx.z;
+      if(p.rad <= .2) p.life = 0;
+    } else if(p.k === 'beamup'){
+      if(ufo){ p.x += (ufo.x - p.x)*dt*2; } p.y += p.vy*dt;
+    }
+  }
+}
+
+// =====================================================================
+// NATUR – jordskælv, lyn, ild, tornado, tsunami
+// =====================================================================
+const FLAM = {[WOOD]:5, [ROOF]:3.5, [LEAF]:1.2};
+let burning = new Map(), fireT = 0, fireAlarmT = 0, quake = null, tornados = [], waves = [], bolts = [], flash = 0;
+const floodH = new Float32Array(WX);
+function ignite(i){ if(burning.size >= 5000 || !mat[i]) return; const m = mat[i] & MM; if(FLAM[m] && !burning.has(i)) burning.set(i, FLAM[m]*(.7 + Math.random()*.6)); }
+function igniteAround(h, r){
+  let n = 0;
+  for(let dy=-r; dy<=r; dy++) for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++){
+    const x = h.x+dx, y = h.y+dy, z = h.z+dz; if(x<0||x>=WX||y<1||y>=HY||z<0||z>=DZ) continue;
+    const i = idx(x,y,z); if(FLAM[mat[i] & MM]){ ignite(i); n++; }
+  }
+  return n;
+}
+function stepFire(dt){
+  fireT += dt; if(fireT < .1) return;
+  const T = fireT; fireT = 0;
+  const add = []; let k = 0;
+  for(const [i, left] of burning){
+    if(!mat[i] || !FLAM[mat[i] & MM]){ burning.delete(i); continue; }
+    const x = ix(i), y = iy(i), z = iz(i);
+    for(const [dx, dy, dz, pr] of FIRE_NB){
+      const xx = x+dx, yy = y+dy, zz = z+dz; if(xx<0||xx>=WX||yy<1||yy>=HY||zz<0||zz>=DZ) continue;
+      const j = idx(xx,yy,zz), m = mat[j] & MM;
+      if(FLAM[m] && !burning.has(j)){ if(Math.random() < pr*T*10) add.push(j); }
+      else if(m === GLASS && Math.random() < .012*T*10) removeCell(j);
+    }
+    if(k++ < 80 && Math.random() < .55) parts.push({k:'flame', x: x + (Math.random()-.5)*.8, y: y + .2, z, vx:(Math.random()-.5)*.8, vy: 2 + Math.random()*2, life:.45 + Math.random()*.4, max:.85, r:.45 + Math.random()*.4});
+    if(Math.random() < .03*T*10 && parts.length < 2800) parts.push({k:'smoke', z, x, y:y+1, vx:(Math.random()-.5), vy:2, life:3, max:3, r:.9});
+    const t = left - T;
+    if(t <= 0){ burning.delete(i); removeCell(i); } else burning.set(i, t);
+  }
+  for(const j of add) ignite(j);
+  if(!burning.size) return;
+  // figurer i flammerne, panik i nærheden
+  fireAlarmT -= T;
+  for(const p of people){
+    if(p.st === 'saved' || p.st === 'dizzy' || p.st === 'fly') continue;
+    const xi = Math.round(p.x), yi = Math.round(p.y);
+    if(xi < 0 || xi >= WX || yi < 0 || yi >= HY-1) continue;
+    if(burning.has(idx(xi, yi, p.z)) || burning.has(idx(xi, yi+1, p.z)) || (yi > 0 && burning.has(idx(xi, yi-1, p.z)))) hitPerson(p, (Math.random()-.5)*6, 8);
+  }
+  if(fireAlarmT <= 0){ fireAlarmT = 1; let n = 0; for(const i of burning.keys()){ if(n++ > 12) break; alarm(ix(i), iy(i), 10); } }
+  if(Math.random() < .5) noise(.03, 3200, Math.min(.12, .02 + burning.size/1500), .001, master, 'highpass');
+}
+const FIRE_NB = [[1,0,0,.07],[-1,0,0,.07],[0,0,1,.07],[0,0,-1,.07],[0,1,0,.22],[0,-1,0,.03]];
+
+function startQuake(){
+  if(quake){ quake.s = Math.min(3, quake.s + 1); quake.t = 5; }
+  else quake = {s:1, t:5, acc:0};
+  toast(`Jordskælv – styrke ${quake.s}`);
+  noise(5, 110, .35 + quake.s*.15, .4, sat);
+  for(const p of people) panic(p);
+  for(const b of bld) if(b) b.alarm = true;
+}
+const QUAKE_WEAK = {træhus:2, mursten:1.6, pakhus:1.5, kirke:1.4, kontor:1, tårn:.7, kran:.6};
+function stepQuake(dt){
+  if(!quake) return;
+  quake.t -= dt; shake(2 + quake.s*2.5);
+  quake.acc += dt;
+  while(quake.acc >= .1){
+    quake.acc -= .1;
+    for(const b of bld){
+      if(!b || b.fallen) continue;
+      const wk = QUAKE_WEAK[b.type] || 1, rv = .5 + hash3(b.id, 7, 3)/255;
+      b.k *= 1 - .0015*quake.s*wk*rv;
+      for(let tries=0; tries<8; tries++){
+        const x = b.x0 + Math.floor(Math.random()*(b.x1-b.x0+1)), y = b.y0 + Math.floor(Math.random()*(b.y1-b.y0+1)), z = b.z0 + Math.floor(Math.random()*(b.z1-b.z0+1));
+        const i = idx(x,y,z);
+        if(bid[i] === b.id && structural(mat[i])){ seeds.push(i); if(Math.random() < .02*quake.s*wk) loosen(i); break; }
+      }
+    }
+  }
+  if(quake.t <= 0) quake = null;
+}
+
+function strikeLightning(x){
+  x = Math.round(Math.max(0, Math.min(WX-1, x)));
+  let best = null;
+  for(let xx=x-4; xx<=x+4; xx++){
+    if(xx < 0 || xx >= WX) continue;
+    for(let y=HY-1; y>=0; y--){
+      let hz = -1; for(let z=0; z<DZ; z++) if(mat[idx(xx,y,z)]){ hz = z; break; }
+      if(hz >= 0){ if(!best || y > best.y) best = {x:xx, y, z:hz}; break; }
+    }
+  }
+  if(!best) return null;
+  const pts = []; let px = best.x + (Math.random()-.5)*10;
+  for(let y = HY + 25; y > best.y; y -= 3){ pts.push([px, y]); px += (Math.random()-.5)*4; px += (best.x - px)*.15; }
+  pts.push([best.x, best.y + .5]);
+  bolts.push({pts, z:best.z, life:.35});
+  flash = .25;
+  explode(best.x, best.y, best.z, 2.4, 1.7);
+  alarm(best.x, best.y, 38);
+  igniteAround(best, 2);
+  thunder();
+  return best;
+}
+function thunder(){ noise(.18, 6000, .6, .002, sat, 'highpass'); noise(3, 260, .55, .08, sat); }
+
+function startTornado(x){
+  tornados.push({x, z: 10 + Math.random()*8, dir: x < WX/2 ? 1 : -1, t:14, acc:0, debris:[]});
+  alarm(x, GY, 45);
+  toast('Tornado!');
+}
+function stepTornado(tn, dt){
+  tn.t -= dt;
+  tn.x += tn.dir*3*dt + Math.sin(tn.t*1.3)*1.5*dt;
+  tn.z = Math.max(2, Math.min(DZ-3, tn.z + Math.sin(tn.t*.7)*2*dt));
+  tn.acc += dt;
+  while(tn.acc >= 1/30){
+    tn.acc -= 1/30;
+    for(let k=0; k<70; k++){
+      const hh = Math.random()*55, r = 2 + hh*.12, a = Math.random()*Math.PI*2, rr = Math.sqrt(Math.random())*r;
+      const x = Math.round(tn.x + Math.cos(a)*rr), z = Math.round(tn.z + Math.sin(a)*rr), y = GY + Math.round(hh);
+      if(x<0 || x>=WX || z<0 || z>=DZ || y>=HY) continue;
+      const i = idx(x,y,z), v = mat[i]; if(!v) continue;
+      const m = v & MM; if(isGround(m)) continue;
+      if(v & LOOSE){ twirl(tn, i); removeCell(i); }
+      else if(MAT[m].hard < .5){ if(Math.random() < .5){ twirl(tn, i); removeCell(i); } }
+      else if(MAT[m].hard < 1.2 && Math.random() < .06) loosen(i);
+    }
+  }
+  for(const p of people) if(p.st !== 'saved' && p.st !== 'fly' && Math.abs(p.x - tn.x) < 3 && Math.abs(p.z - tn.z) < 5 && !(p.st === 'inside' && p.y < GY + 6)) hitPerson(p, (Math.random()-.5)*22, 16 + Math.random()*8);
+  for(const v of cars.concat(buses)) if(v.st !== 'away' && v.st !== 'fly' && Math.abs(v.x - tn.x) < 3 + v.len/2 && Math.abs(v.z - tn.z) < 6) wreck(v, (Math.random()-.5)*18, 14 + Math.random()*6);
+  for(let k=tn.debris.length-1; k>=0; k--){
+    const d = tn.debris[k]; d.a += dt*(5 + 8/(d.r)); d.h += dt*7; d.life -= dt;
+    if(d.life <= 0 || d.h > 55){ tn.debris.splice(k, 1); if(parts.length < 2600) parts.push({k:'deb', x: tn.x + Math.cos(d.a)*d.r, y: GY + d.h, z: tn.z, vx: Math.cos(d.a)*20, vy: 4, life:2, max:2, s:.6, col:d.col, rot:0, vr:6}); }
+  }
+  if(Math.random() < dt*1.5) alarm(tn.x, GY, 30);
+}
+function twirl(tn, i){
+  if(tn.debris.length >= 220) return;
+  const c = cellColor(mat[i] & MM, bid[i], ix(i), iy(i), iz(i), false);
+  tn.debris.push({a: Math.random()*6.28, h: iy(i) - GY, r: 2 + Math.random()*4, life: 2 + Math.random()*3, col:`rgb(${c & 255},${(c>>8) & 255},${(c>>16) & 255})`});
+}
+
+function startTsunami(){
+  const H = theme === 'havneby' ? 15 : theme === 'landsby' ? 7 : 10;
+  waves.push({x:-14, dir:1, H, acc:0});
+  for(const p of people) panic(p);
+  for(const b of bld) if(b) b.alarm = true;
+  toast('Tsunami!');
+  noise(5, 700, .6, .8, sat);
+}
+function stepWave(w, dt){
+  w.x += w.dir*15*dt;
+  w.acc += dt;
+  if(w.acc >= 1/30){
+    w.acc = 0;
+    const xa = Math.max(0, Math.floor(w.x - 5)), xb = Math.min(WX-1, Math.floor(w.x));
+    for(let x=xa; x<=xb; x++){
+      floodH[x] = Math.max(floodH[x], w.H*.55);
+      for(let y=GY; y<GY+w.H && y<HY; y++){
+        const depth = 1 - (y-GY)/w.H;
+        for(let z=0; z<DZ; z++){
+          const i = idx(x,y,z), v = mat[i]; if(!v) continue;
+          const m = v & MM; if(isGround(m)) continue;
+          if(v & LOOSE){ if(Math.random() < .35){ if(Math.random() < .05) debrisFrom(i, 1, .2, 10); removeCell(i); } }
+          else if(MAT[m].hard < .5){ if(Math.random() < .25*depth) removeCell(i); }
+          else if(MAT[m].hard < 1.1 && Math.random() < .012*depth) loosen(i);
+        }
+      }
+    }
+  }
+  for(const p of people) if(p.st !== 'saved' && p.st !== 'fly' && Math.abs(p.x - w.x) < 3 && p.y < GY + w.H && !(p.st === 'inside' && p.y > GY + w.H*.6)) hitPerson(p, w.dir*(10 + Math.random()*6), 4 + Math.random()*3);
+  for(const v of cars.concat(buses)) if(v.st !== 'away' && v.st !== 'fly' && Math.abs(v.x - w.x) < 3 + v.len/2) wreck(v, w.dir*12, 5);
+}
+
+function stepNature(dt){
+  stepQuake(dt);
+  stepFire(dt);
+  for(let k=tornados.length-1; k>=0; k--){ const tn = tornados[k]; stepTornado(tn, dt); if(tn.t <= 0 || tn.x < -12 || tn.x > WX + 12) tornados.splice(k, 1); }
+  for(let k=waves.length-1; k>=0; k--){ const w = waves[k]; stepWave(w, dt); if(w.x > WX + 20) waves.splice(k, 1); }
+  for(let k=bolts.length-1; k>=0; k--){ bolts[k].life -= dt; if(bolts[k].life <= 0) bolts.splice(k, 1); }
+  flash = Math.max(0, flash - dt);
+  for(let x=0; x<WX; x++) if(floodH[x] > 0) floodH[x] = Math.max(0, floodH[x] - 1.1*dt);
+  windSound(tornados.length > 0);
+}
+function resetNature(){ burning.clear(); quake = null; tornados = []; waves = []; bolts = []; flash = 0; floodH.fill(0); windSound(false); }
+
+// --- tegning af natur
+function drawNature(pX, pY, s, iso, t){
+  // tornado: stak af roterende skyer + hvirvlende brokker
+  for(const tn of tornados){
+    for(let hh=0; hh<56; hh+=2.2){
+      const r = 2 + hh*.12, sway = Math.sin(hh*.15 + t*3)*1.2;
+      ctx.fillStyle = `rgba(118,118,124,${(.16 + .06*Math.sin(hh + t*8)).toFixed(3)})`;
+      ctx.beginPath(); ctx.ellipse(pX(tn.x + sway, tn.z), pY(GY + hh, tn.z), r*s, r*s*.33, 0, 0, 7); ctx.fill();
+    }
+    for(const d of tn.debris){ ctx.fillStyle = d.col; const X = pX(tn.x + Math.cos(d.a)*d.r, tn.z + Math.sin(d.a)*d.r*.4), Y = pY(GY + d.h, tn.z); ctx.fillRect(X - s*.3, Y - s*.3, s*.6, s*.6); }
+  }
+  // oversvømmelse
+  let x = 0;
+  while(x < WX){
+    if(floodH[x] <= .05){ x++; continue; }
+    const a = x; while(x < WX && floodH[x] > .05) x++;
+    const L = GY - .5;
+    ctx.fillStyle = 'rgba(40,118,186,.5)';
+    ctx.beginPath(); ctx.moveTo(pX(a - .5, 0), pY(L, 0));
+    for(let q=a; q<x; q++) ctx.lineTo(pX(q + .5, 0), pY(L + floodH[q], 0));
+    ctx.lineTo(pX(x - .5, 0), pY(L, 0)); ctx.closePath(); ctx.fill();
+    if(iso){
+      ctx.fillStyle = 'rgba(70,150,210,.35)';
+      ctx.beginPath(); ctx.moveTo(pX(a - .5, 0), pY(L + floodH[a], 0));
+      for(let q=a; q<x; q++) ctx.lineTo(pX(q + .5, 0), pY(L + floodH[q], 0));
+      for(let q=x-1; q>=a; q--) ctx.lineTo(pX(q + .5, DZ), pY(L + floodH[q], DZ));
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  // tsunamibølgen
+  for(const w of waves){
+    const L = GY - .5, H = w.H;
+    const shape = z => { ctx.beginPath(); ctx.moveTo(pX(w.x - 45, z), pY(L, z)); ctx.lineTo(pX(w.x - 45, z), pY(L + H*.5, z));
+      ctx.quadraticCurveTo(pX(w.x - 6, z), pY(L + H*.85, z), pX(w.x, z), pY(L + H, z));
+      ctx.quadraticCurveTo(pX(w.x + 3.5, z), pY(L + H*.95, z), pX(w.x + 2.2, z), pY(L + H*.62, z));
+      ctx.lineTo(pX(w.x + 1, z), pY(L, z)); ctx.closePath(); };
+    if(iso){ ctx.fillStyle = 'rgba(30,104,176,.45)'; shape(DZ); ctx.fill(); }
+    ctx.fillStyle = 'rgba(26,104,182,.8)'; shape(0); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = Math.max(2, s*.5);
+    ctx.beginPath(); ctx.moveTo(pX(w.x - 8, 0), pY(L + H*.88, 0)); ctx.quadraticCurveTo(pX(w.x - 2, 0), pY(L + H*1.02, 0), pX(w.x + 2.4, 0), pY(L + H*.7, 0)); ctx.stroke();
+  }
+  // lyn
+  for(const b of bolts){
+    const a = b.life / .35;
+    ctx.strokeStyle = `rgba(255,255,230,${a.toFixed(3)})`; ctx.lineWidth = Math.max(2, s*.45); ctx.shadowColor = '#bcd7ff'; ctx.shadowBlur = 18;
+    ctx.beginPath(); b.pts.forEach(([x, y], k) => k ? ctx.lineTo(pX(x, b.z), pY(y, b.z)) : ctx.moveTo(pX(x, b.z), pY(y, b.z))); ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// =====================================================================
+// SCI-FI – orbital-laser, sort hul, meteor, UFO
+// =====================================================================
+const laser = {on:false, sx:0, sy:0, acc:0, hit:null, x:0, y:0, z:9};
+let holes = [], ufo = null;
+function laserTarget(){
+  const h = pickScreen(laser.sx, laser.sy);
+  if(h) return h;
+  const u = cam.x + laser.sx/cam.s;
+  return {x: Math.round(viewMode === 'iso' ? u - 4.5 : u), y: GY, z: 9};
+}
+function laserTick(h){
+  // strålen kommer lodret fra kredsløb og brænder sig ned i søjlen omkring (x, z)
+  laser.hit = h; laser.x = h.x; laser.z = h.z;
+  let top = -1, n = 0;
+  for(let dz=-1; dz<=1; dz++) for(let dx=-1; dx<=1; dx++){
+    const x = h.x + dx, z = h.z + dz; if(x<0 || x>=WX || z<0 || z>=DZ) continue;
+    let removed = 0;
+    for(let y=HY-1; y>=1 && removed < 2; y--){
+      const i = idx(x,y,z), v = mat[i]; if(!v) continue;
+      const m = v & MM; if(m === BED || m === WATER) break;
+      if(Math.random() < .25) debrisFrom(i, (Math.random()-.5)*2, 1, 8);
+      if(FLAM[m] === undefined){ for(const [qx, qz] of [[1,0],[-1,0],[0,1],[0,-1]]){ const xx = x+qx, zz = z+qz; if(xx>=0 && xx<WX && zz>=0 && zz<DZ){ const j = idx(xx, y, zz); if(FLAM[mat[j] & MM] && Math.random() < .2) ignite(j); } } }
+      else ignite(i);
+      removeCell(i); removed++; n++;
+      if(y > top) top = y;
+    }
+  }
+  laser.y = top >= 0 ? top : GY - 1;
+  sparks(h.x, laser.y + .5, h.z - .5, 3);
+  if(n) alarm(h.x, laser.y, 12);
+  for(const p of people) if(p.st !== 'saved' && p.st !== 'lost' && Math.abs(p.x - h.x) < 1.6 && Math.abs(p.z - h.z) < 2) hitPerson(p, (Math.random()-.5)*10, 10);
+  for(const v of cars.concat(buses)) if(Math.abs(v.x - h.x) < v.len/2 + 1 && Math.abs(v.z - h.z) < 2) wreck(v, 0, 6);
+  return n;
+}
+function stepLaser(dt){
+  if(laser.on && !spendTime('laser', dt)) laser.on = false;
+  if(!laser.on){ laser.hit = null; laserSound(false); return; }
+  laser.acc += dt;
+  while(laser.acc >= 1/40){ laser.acc -= 1/40; laserTick(laserTarget()); }
+  laserSound(true);
+}
+
+function spawnHole(h){
+  holes.push({x:h.x, y:h.y, z:h.z, t:8, r:0, acc:0, spin:0});
+  alarm(h.x, h.y, 40);
+  tone('sine', 120, 40, 2.5, .5, 0, sat); noise(3, 400, .3, .6, sat);
+}
+function stepHole(hl, dt){
+  hl.t -= dt; hl.spin += dt*4;
+  hl.r = hl.t > 1 ? Math.min(9, hl.r + dt*3.5) : Math.max(0, hl.r - dt*9);
+  const R = hl.r*1.7 + 1;
+  hl.acc += dt;
+  while(hl.acc >= 1/30){
+    hl.acc -= 1/30;
+    for(let k=0; k<170; k++){
+      const a = Math.random()*Math.PI*2, b = Math.acos(2*Math.random() - 1), rr = Math.cbrt(Math.random())*R;
+      const x = Math.round(hl.x + rr*Math.sin(b)*Math.cos(a)), y = Math.round(hl.y + rr*Math.cos(b)), z = Math.round(hl.z + rr*Math.sin(b)*Math.sin(a)*.6);
+      if(x<0 || x>=WX || y<1 || y>=HY || z<0 || z>=DZ) continue;
+      const i = idx(x,y,z), v = mat[i]; if(!v) continue;
+      const m = v & MM; if(m === BED || m === WATER) continue;
+      if(Math.random() < Math.sqrt(1 - rr/R)*.55){
+        if(parts.length < 2900){ const c = cellColor(m, bid[i], x, y, z, false); parts.push({k:'suck', x, y, z, hx:hl, ang:Math.atan2(y - hl.y, x - hl.x), rad:Math.hypot(x - hl.x, y - hl.y), life:1.2, max:1.2, col:`rgb(${c & 255},${(c>>8) & 255},${(c>>16) & 255})`}); }
+        removeCell(i);
+      }
+    }
+  }
+  const pull = (o, oy) => { const dx = hl.x - o.x, dy = hl.y - oy, dz = (hl.z - o.z), d = Math.hypot(dx, dy, dz*.6) || .1; return {dx, dy, d}; };
+  for(const p of people){
+    if(p.st === 'saved' || p.st === 'lost') continue;
+    const q = pull(p, p.y + .8);
+    if(q.d < 2.2 && hl.r > 2){ if(!p.hit){ p.hit = true; stats.hit++; } p.st = 'lost'; continue; }
+    if(q.d < 26 && hl.r > 2 && !(p.st === 'inside' && q.d > 10)){ if(p.st !== 'fly') hitPerson(p, q.dx/q.d*10, q.dy/q.d*10 + 6); else { p.vx += q.dx/q.d*40*dt; p.vy += q.dy/q.d*40*dt + G*dt; } }
+  }
+  for(const v of cars.concat(buses)){
+    if(v.st === 'away' || v.st === 'lost') continue;
+    const q = pull(v, v.y + .6);
+    if(q.d < 2.6 && hl.r > 2){ wreck(v, 0, 1); v.st = 'lost'; continue; }
+    if(q.d < 26 && hl.r > 2){ if(v.st !== 'fly') wreck(v, q.dx/q.d*8, q.dy/q.d*8 + 6); else { v.vx += q.dx/q.d*30*dt; v.vy += q.dy/q.d*30*dt + G*dt; } }
+  }
+  for(const b of bodies){ const dx = hl.x - b.cx, dy = hl.y - b.cy, d = Math.hypot(dx, dy) || .1; if(d < 30){ b.vx += dx/d*25*dt; b.vy += dy/d*25*dt + G*dt*.8; b.w += (Math.random()-.5)*dt; b.state = 'fall'; } }
+  shake(1.5);
+}
+
+function ufoSteer(sx, sy){
+  const u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s, z = 8;
+  const x = viewMode === 'iso' ? u - z*.5 : u, y = viewMode === 'iso' ? v - z*.5 : v;
+  if(!ufo && !useTool('ufo')) return;
+  ufoAt(x, y);
+}
+function ufoAt(x, y){
+  const z = 8;
+  if(!ufo){
+    ufo = {x, y: HY + 14, z, tx:x, ty:y, vx:0, vy:0, beam:false, cargo:[], acc:0, t:0};
+    toast('UFO! Træk for at styre – hold Trækstråle');
+    tone('sine', 300, 900, .6, .12); tone('sine', 900, 300, .6, .1, .5);
+  }
+  ufo.tx = Math.max(-5, Math.min(WX + 5, x)); ufo.ty = Math.max(GY + 10, Math.min(HY + 18, y));
+}
+function setBeam(on){
+  if(!ufo) on = false;
+  if(ufo) ufo.beam = on;
+  $('bBeam').setAttribute('aria-pressed', String(on));
+  if(!on && ufo && ufo.cargo.length) dropCargo();
+}
+function dropCargo(){
+  // lasten slippes som en klump, der falder og knuser det, den rammer
+  const n = ufo.cargo.length, side = Math.max(2, Math.ceil(Math.cbrt(n))), x0 = Math.round(ufo.x - side/2), y0 = Math.round(ufo.y - 4), z0 = ufo.z - (side >> 1);
+  let k = 0;
+  for(let dy=0; dy<side*2 && k<n; dy++) for(let dz=0; dz<side && k<n; dz++) for(let dx=0; dx<side && k<n; dx++){
+    const x = x0 + dx, y = y0 - dy, z = Math.max(0, Math.min(DZ-1, z0 + dz));
+    if(x<0 || x>=WX || y<1 || y>=HY) { k++; continue; }
+    const i = idx(x,y,z); if(mat[i]) continue;
+    const c = ufo.cargo[k++]; mat[i] = (c.m & MM) | SCORED; bid[i] = c.b; dirtyCol(x); seeds.push(i);
+  }
+  ufo.cargo = [];
+}
+function stepUFO(dt){
+  if(!ufo) return;
+  ufo.t += dt;
+  const dx = ufo.tx - ufo.x, dy = ufo.ty - ufo.y;
+  ufo.vx += (Math.max(-18, Math.min(18, dx*2)) - ufo.vx)*Math.min(1, dt*3);
+  ufo.vy += (Math.max(-12, Math.min(12, dy*2)) - ufo.vy)*Math.min(1, dt*3);
+  ufo.x += ufo.vx*dt; ufo.y += ufo.vy*dt + Math.sin(ufo.t*2.2)*.3*dt;
+  if(!ufo.beam){ beamSound(false); return; }
+  beamSound(true);
+  ufo.acc += dt;
+  while(ufo.acc >= 1/30){
+    ufo.acc -= 1/30;
+    // løse brokker suges op; svage dele rives løs
+    for(let k=0; k<40; k++){
+      const x = Math.round(ufo.x + (Math.random()-.5)*5), z = Math.round(ufo.z + (Math.random()-.5)*5);
+      if(x<0 || x>=WX || z<0 || z>=DZ) continue;
+      for(let y=Math.min(HY-1, Math.floor(ufo.y) - 2); y>=1; y--){
+        const i = idx(x,y,z), v = mat[i]; if(!v) continue;
+        const m = v & MM; if(isGround(m)) break;
+        if(v & LOOSE){ if(ufo.cargo.length < 500){ ufo.cargo.push({m, b:bid[i]}); if(mission) mission.lifted++; if(parts.length < 2900){ const c = cellColor(m, bid[i], x, y, z, false); parts.push({k:'beamup', x, y, z, vx:0, vy:7, life:(ufo.y - y)/7, max:3, col:`rgb(${c & 255},${(c>>8) & 255},${(c>>16) & 255})`}); } removeCell(i); } }
+        else if(MAT[m].hard < .8 && Math.random() < .25) loosen(i);
+        break;
+      }
+    }
+  }
+  for(const p of people) if(p.st !== 'saved' && p.st !== 'lost' && p.st !== 'beam' && p.st !== 'held' && Math.abs(p.x - ufo.x) < 2.5 && p.y < ufo.y && Math.abs(p.z - ufo.z) < 6 && !(p.st === 'inside' && solidAt(p.x, p.y + 2, p.z))){ p.st = 'beam'; p.ox = (Math.random()-.5)*3; p.falling = false; panic(p); }
+  for(const v of cars.concat(buses)) if(!v.bus && (v.st === 'drive' || v.st === 'wreck') && Math.abs(v.x - ufo.x) < 3 && Math.abs(v.z - ufo.z) < 8){ if(!v.dead){ v.dead = true; stats.damage += 30000; } v.st = 'beam'; v.ox = (Math.random()-.5)*2; }
+}
+function stepScifi(dt){
+  stepLaser(dt);
+  for(let k=holes.length-1; k>=0; k--){ const hl = holes[k]; stepHole(hl, dt); if(hl.t <= 0){ holes.splice(k, 1); explode(hl.x, hl.y, hl.z, 4, 1.4); } }
+  stepUFO(dt);
+}
+function resetScifi(){ laser.on = false; holes = []; ufo = null; setBeam(false); laserSound(false); beamSound(false); }
+
+function drawScifi(pX, pY, s, iso, t){
+  for(const hl of holes){
+    const X = pX(hl.x, hl.z), Y = pY(hl.y, hl.z), r = Math.max(.1, hl.r)*s;
+    const gr = ctx.createRadialGradient(X, Y, r*.3, X, Y, r*2.4);
+    gr.addColorStop(0, 'rgba(120,60,200,.0)'); gr.addColorStop(.4, 'rgba(160,90,255,.35)'); gr.addColorStop(1, 'rgba(255,140,60,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, r*2.4, 0, 7); ctx.fill();
+    ctx.save(); ctx.translate(X, Y); ctx.rotate(hl.spin*.2);
+    ctx.strokeStyle = 'rgba(255,170,80,.85)'; ctx.lineWidth = Math.max(2, r*.12);
+    ctx.beginPath(); ctx.ellipse(0, 0, r*1.6, r*.45, 0, 0, 7); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X, Y, r*.7, 0, 7); ctx.fill();
+  }
+  if(laser.on && laser.hit){
+    const X = pX(laser.x, laser.z - .5), Y0 = pY(HY + 60, laser.z - .5), Y1 = pY(laser.y + .5, laser.z - .5), w = Math.max(6, s*2.6);
+    ctx.fillStyle = 'rgba(255,60,90,.25)'; ctx.fillRect(X - w, Y0, w*2, Y1 - Y0);
+    ctx.fillStyle = 'rgba(255,90,120,.7)'; ctx.fillRect(X - w*.45, Y0, w*.9, Y1 - Y0);
+    ctx.fillStyle = 'rgba(255,240,245,.95)'; ctx.fillRect(X - w*.15, Y0, w*.3, Y1 - Y0);
+    const gr = ctx.createRadialGradient(X, Y1, 0, X, Y1, w*2.5); gr.addColorStop(0, 'rgba(255,255,255,.95)'); gr.addColorStop(1, 'rgba(255,60,90,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y1, w*2.5, 0, 7); ctx.fill();
+  }
+  if(ufo){
+    const X = pX(ufo.x, ufo.z), Y = pY(ufo.y, ufo.z);
+    if(ufo.beam){
+      const gY = pY(GY - .5, ufo.z);
+      const gr = ctx.createLinearGradient(0, Y, 0, gY); gr.addColorStop(0, 'rgba(190,255,120,.55)'); gr.addColorStop(1, 'rgba(190,255,120,.12)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(X - s*1.5, Y); ctx.lineTo(X + s*1.5, Y); ctx.lineTo(X + s*3, gY); ctx.lineTo(X - s*3, gY); ctx.closePath(); ctx.fill();
+    }
+    ctx.save(); ctx.translate(X, Y); ctx.rotate(Math.max(-.3, Math.min(.3, ufo.vx*.02)));
+    ctx.fillStyle = 'rgba(150,230,255,.85)'; ctx.beginPath(); ctx.ellipse(0, -s*1.1, s*2.2, s*1.6, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#9aa3ad'; ctx.beginPath(); ctx.ellipse(0, 0, s*5, s*1.3, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#6b737c'; ctx.beginPath(); ctx.ellipse(0, s*.35, s*3.6, s*.8, 0, 0, Math.PI); ctx.fill();
+    for(let k=0;k<6;k++){ const on = ((t*6 + k) | 0) % 3 === 0; ctx.fillStyle = on ? '#ffe45e' : '#a33'; ctx.beginPath(); ctx.arc((k - 2.5)*s*1.5, s*.1, s*.3, 0, 7); ctx.fill(); }
+    ctx.restore();
+    if(ufo.cargo.length){ ctx.fillStyle = '#fff'; ctx.font = `700 ${Math.max(10, s*1.1)|0}px 'Barlow Condensed', sans-serif`; ctx.textAlign = 'center'; ctx.fillText(`${ufo.cargo.length} brokker`, X, Y - s*3.2); }
+  }
+}
+
+// =====================================================================
+// MONSTRE – kæmpegorilla, kaiju, tentakler
+// =====================================================================
+let monsters = [];
+const MON_DEF = {
+  gorilla: {h:21, rx:4.2, ry:10.5, rz:3, str:2,   speed:4,   z:6,  name:'Kæmpegorillaen'},
+  kaiju:   {h:30, rx:5,   ry:14, rz:4, str:3.2, speed:2.5, z:15, name:'Kaijuen'}
+};
+function groundAt(x, z){
+  const xi = Math.max(0, Math.min(WX-1, Math.round(x)));
+  for(let y = GY + 1; y >= 1; y--){ const v = mat[idx(xi, y, z)]; if(v && isGround(v & MM)) return y + 1; }
+  return 1;
+}
+function monsterOf(type){ return monsters.find(m => m.type === type); }
+function spawnMonster(type, x){
+  if(type === 'tentakel'){ spawnTentacles(x); return; }
+  const D = MON_DEF[type];
+  const m = {type, x, y: HY + 12, z: D.z, vy: 0, dir: x < WX/2 ? 1 : -1, tx: null, ty: null, steerT: 0, t: 0, act: 0, step: 0, air: true, breath: 0, bx: 0, by: 0, crushT: 0, alarmT: 0, swing: 0};
+  monsters.push(m);
+  toast(type === 'gorilla' ? 'En kæmpegorilla er løs!' : 'Kaiju i byen!');
+  roar(type);
+}
+function steerMonster(type, wx, wy){
+  const m = monsterOf(type);
+  if(!m){ spawnMonster(type, wx); return; }
+  if(type === 'tentakel'){ for(const tn of m.arms) tn.target = {x: wx, y: wy}; m.steerT = 1.5; return; }
+  m.tx = wx; m.ty = wy; m.steerT = 1.5;
+}
+// knus alt inden i kroppen (ellipsoide) – monsteret går gennem byen
+function crushBody(cx, cy, cz, rx, ry, rz, str){
+  let n = 0;
+  for(let y = Math.max(1, Math.floor(cy - ry)); y <= Math.min(HY-1, Math.ceil(cy + ry)); y++)
+    for(let z = Math.max(0, Math.floor(cz - rz)); z <= Math.min(DZ-1, Math.ceil(cz + rz)); z++)
+      for(let x = Math.max(0, Math.floor(cx - rx)); x <= Math.min(WX-1, Math.ceil(cx + rx)); x++){
+        const dx = (x - cx)/rx, dy = (y - cy)/ry, dz = (z - cz)/rz; if(dx*dx + dy*dy + dz*dz > 1) continue;
+        const i = idx(x,y,z), v = mat[i]; if(!v) continue;
+        const m = v & MM; if(isGround(m) || MAT[m].hard >= str) continue;
+        if(Math.random() < .12) debrisFrom(i, (Math.random()-.5)*2, .8, 10);
+        removeCell(i); n++;
+      }
+  return n;
+}
+function hitInBody(cx, cy, cz, rx, ry, rz, push){
+  for(const p of people){ if(p.st === 'saved' || p.st === 'lost' || p.st === 'fly') continue;
+    const dx = (p.x - cx)/rx, dy = (p.y + .8 - cy)/ry, dz = (p.z - cz)/(rz + 1); if(dx*dx + dy*dy + dz*dz <= 1) hitPerson(p, push*(Math.random()*.6 + .7) + (Math.random()-.5)*6, 8 + Math.random()*6); }
+  for(const v of cars.concat(buses)){ if(v.st === 'away' || v.st === 'lost' || v.st === 'fly') continue;
+    const dx = (v.x - cx)/(rx + v.len/2), dy = (v.y + .6 - cy)/ry, dz = (v.z - cz)/(rz + 1); if(dx*dx + dy*dy + dz*dz <= 1) wreck(v, push*.8, 8); }
+}
+function stepWalker(m, dt){
+  const D = MON_DEF[m.type];
+  m.t += dt; m.steerT -= dt; m.act -= dt; m.alarmT -= dt;
+  if(m.alarmT <= 0){ m.alarmT = 1; alarm(m.x, GY, 40); }
+  // gang: mod styrepunktet, ellers selv frem og tilbage gennem byen
+  let want = 0;
+  if(m.steerT > 0 && m.tx !== null){ const d = m.tx - m.x; if(Math.abs(d) > 1.5) want = Math.sign(d); }
+  else { want = m.dir; if(m.x < 6) m.dir = 1; else if(m.x > WX - 6) m.dir = -1; want = m.dir; }
+  if(want) m.dir = want;
+  const g = groundAt(m.x, m.z);
+  if(m.air || m.y > g + .01){
+    m.vy -= G*1.2*dt; m.y += m.vy*dt; m.x += (m.jx || 0)*dt;
+    if(m.y <= g){ const hard = m.air && m.vy < -8; m.y = g; m.air = false; m.vy = 0; m.jx = 0; if(hard) stomp(m); }
+  } else if(want){
+    m.x += want*D.speed*dt; m.y = groundAt(m.x, m.z);
+    m.step += D.speed*dt; if(m.step > (m.type === 'kaiju' ? 5 : 3.5)){ m.step = 0; thud(m.type === 'kaiju' ? 1 : .6); shake(m.type === 'kaiju' ? 5 : 2.5); }
+  }
+  m.x = Math.max(2, Math.min(WX - 3, m.x));
+  // kroppen knuser det, den går igennem
+  m.crushT -= dt;
+  if(m.crushT <= 0){ m.crushT = .1; crushBody(m.x, m.y + D.ry, m.z, D.rx, D.ry, D.rz, D.str); hitInBody(m.x, m.y + D.ry, m.z, D.rx + 1, D.ry, D.rz, m.dir*14); }
+  if(m.type === 'gorilla'){
+    // hop, når man trækker op over hovedet
+    if(!m.air && m.steerT > 0 && m.ty !== null && m.ty > m.y + D.h + 2){ m.air = true; m.vy = Math.min(30, 12 + (m.ty - m.y - D.h)*.9); m.jx = m.dir*D.speed*1.5; roar('gorilla'); }
+    // slag
+    if(m.act <= 0){
+      const px = m.x + m.dir*6, py = m.y + 10;
+      let any = false; for(let z = m.z - 3; z <= m.z + 6 && !any; z++) for(let y = py - 4; y <= py + 4 && !any; y++) if(solidAt(px, y, Math.max(0, Math.min(DZ-1, z))) && !isGround(mat[idx(Math.round(px), Math.round(y), Math.max(0, Math.min(DZ-1, z)))] & MM)) any = true;
+      if(any){ m.act = .7; m.swing = .35; explode(px, py, m.z + 1, 3.4, 2.6); }
+      else m.act = .2;
+    }
+    m.swing = Math.max(0, m.swing - dt);
+  } else {
+    // ildånde: mod styrepunktet, ellers med jævne mellemrum mod en bygning foran sig
+    const mouthX = m.x + m.dir*7, mouthY = m.y + 26;
+    if(m.breath <= 0 && m.act <= 0){
+      let tx, ty;
+      if(m.steerT > 0 && m.tx !== null && Math.abs(m.tx - m.x) < 60 && (m.tx - m.x)*m.dir > 0){ tx = m.tx; ty = m.ty; }
+      else { tx = m.x + m.dir*(18 + Math.random()*20); ty = GY + 4 + Math.random()*24; }
+      m.breath = 1.6; m.bx = tx; m.by = ty; m.act = 4 + Math.random()*2; roar('kaiju');
+    }
+    if(m.breath > 0){
+      m.breath -= dt;
+      if(m.steerT > 0 && m.tx !== null && (m.tx - m.x)*m.dir > 0){ m.bx = m.tx; m.by = m.ty; }
+      const dx = m.bx - mouthX, dy = m.by - mouthY, d = Math.hypot(dx, dy) || 1, len = Math.min(55, d + 6);
+      for(let k=0; k<6 && parts.length < 2900; k++){ const q = Math.random(); parts.push({k:'fire', x: mouthX + dx/d*len*q, y: mouthY + dy/d*len*q, z: m.z - 2, vx:(Math.random()-.5)*4 + dx/d*8, vy:(Math.random()-.5)*4 + dy/d*8, life:.4, max:.4, r: 1 + q*1.8}); }
+      if(Math.random() < .5){
+        for(let q = 4; q < len; q += 2){
+          const x = mouthX + dx/d*q, y = mouthY + dy/d*q;
+          for(let z = m.z - 9; z <= m.z + 2; z += 1){
+            if(z < 0 || z >= DZ) continue;
+            const i = idx(Math.max(0, Math.min(WX-1, Math.round(x))), Math.max(1, Math.min(HY-1, Math.round(y))), z), v = mat[i];
+            if(!v) continue; const mm = v & MM; if(isGround(mm)) continue;
+            if(FLAM[mm]) ignite(i); else if(MAT[mm].hard < 1.3 && Math.random() < .5) removeCell(i);
+          }
+        }
+        for(const p of people) if(p.st !== 'saved' && p.st !== 'lost' && Math.abs(p.x - m.bx) < 4 && Math.abs(p.y - m.by) < 6) hitPerson(p, m.dir*8, 10);
+      }
+    }
+    // halesving bagud
+    if(Math.random() < dt*.4){ explode(m.x - m.dir*13, m.y + 4, m.z, 4, 2.2); m.swing = .4; }
+    m.swing = Math.max(0, m.swing - dt);
+  }
+}
+function stomp(m){
+  // landing: knuser det, den lander på, og vælter folk omkuld – men graver ikke i jorden
+  const D = MON_DEF[m.type];
+  crushBody(m.x, m.y + 1, m.z, D.rx + 2.5, 3, D.rz + 1.5, D.str);
+  hitInBody(m.x, m.y + 1, m.z, D.rx + 6, 4, D.rz + 3, 0);
+  dustAt(m.x, m.y, 14, m.z); alarm(m.x, m.y, 40);
+  thud(1.2); shake(12);
+}
+
+function spawnTentacles(x){
+  const z = 9, arms = [];
+  for(const dx of [-7, 0, 7]) arms.push({bx: Math.round(x + dx), len: 22 + Math.random()*12, grow: 0, ph: Math.random()*6, target: null, whip: 1 + Math.random()*2, pts: []});
+  // hul i jorden, hvor de kommer op
+  for(const a of arms) explode(a.bx, GY - 1, z, 3, 2.2);
+  monsters.push({type:'tentakel', arms, z, t:0, life:18, steerT:0, alarmT:0, crushT:0});
+  toast('Tentakler fra undergrunden!'); roar('tentakel');
+}
+function stepTentacles(m, dt){
+  m.t += dt; m.life -= dt; m.steerT -= dt; m.alarmT -= dt; m.crushT -= dt;
+  if(m.alarmT <= 0){ m.alarmT = 1; alarm(m.arms[1].bx, GY, 35); }
+  const doCrush = m.crushT <= 0; if(doCrush) m.crushT = .1;
+  for(const a of m.arms){
+    a.grow = m.life > 1.5 ? Math.min(1, a.grow + dt*.7) : Math.max(0, a.grow - dt*.8);
+    // mål: styrepunktet, ellers den nærmeste bygning
+    if(!(m.steerT > 0 && a.target) && (!a.auto || Math.random() < dt*.3)){
+      let best = null;
+      for(const b of bld){ if(!b || b.fallen) continue; const cx = (b.x0 + b.x1)/2, d = Math.abs(cx - a.bx); if(d < 45 && (!best || d < best.d)) best = {d, x: cx + (Math.random()-.5)*(b.x1-b.x0)*.6, y: b.y0 + 4 + Math.random()*Math.max(2, b.y1 - b.y0 - 4)}; }
+      a.auto = best || {x: a.bx + (Math.random()-.5)*20, y: GY + 15};
+    }
+    const tg = (m.steerT > 0 && a.target) ? a.target : a.auto;
+    const N = 14, L = a.len*a.grow/N, pts = [[a.bx, GY - 1]];
+    let ang = Math.PI/2;
+    for(let k=0; k<N; k++){
+      const [px, py] = pts[k], want = Math.atan2(tg.y - py, tg.x - px);
+      let da = want - ang; while(da > Math.PI) da -= 2*Math.PI; while(da < -Math.PI) da += 2*Math.PI;
+      ang += da*.22 + Math.sin(m.t*2.2 + k*.55 + a.ph)*.16;
+      pts.push([px + Math.cos(ang)*L, py + Math.sin(ang)*L]);
+    }
+    a.pts = pts;
+    if(doCrush && a.grow > .2){
+      for(let k=1; k<pts.length; k++){ const w = 2.6 - k*.13; crushBody(pts[k][0], pts[k][1], m.z, w, w, w*.9, 1.6); }
+      const tip = pts[pts.length-1];
+      hitInBody(tip[0], tip[1], m.z, 3, 3, 4, (Math.random()-.5)*20);
+    }
+    a.whip -= dt;
+    if(a.whip <= 0 && a.grow > .8){ a.whip = 1.5 + Math.random()*1.5; const tip = pts[pts.length-1]; explode(tip[0], tip[1], m.z, 3.2, 2.3); }
+  }
+}
+function stepMonsters(dt){
+  for(let k=monsters.length-1; k>=0; k--){
+    const m = monsters[k];
+    if(m.type === 'tentakel'){ stepTentacles(m, dt); if(m.life <= 0) monsters.splice(k, 1); }
+    else stepWalker(m, dt);
+  }
+}
+function resetMonsters(){ monsters = []; }
+function roar(type){
+  if(!AC) return;
+  if(type === 'gorilla'){ tone('sawtooth', 110, 70, 1.1, .35, 0, sat); tone('sawtooth', 165, 90, 1.0, .2, .05, sat); noise(1, 600, .2, .1, sat); }
+  else if(type === 'kaiju'){ tone('sawtooth', 520, 180, 1.8, .3, 0, sat); tone('square', 260, 120, 1.8, .18, .1, sat); noise(1.8, 2000, .25, .2, sat); }
+  else { tone('sine', 60, 35, 2, .5, 0, sat); noise(2, 300, .4, .3, sat); }
+}
+function thud(v){ if(!AC) return; tone('sine', 70, 30, .35, .5*v); noise(.25, 250, .3*v, .005, sat); }
+
+function drawMonsters(pX, pY, s, iso, t){
+  for(const m of monsters){
+    if(m.type === 'tentakel'){
+      for(const a of m.arms){
+        if(a.pts.length < 2) continue;
+        for(let pass=0; pass<2; pass++){
+          for(let k=1; k<a.pts.length; k++){
+            const w = Math.max(.6, 2.6 - k*.13)*s*(pass ? .55 : 1);
+            ctx.strokeStyle = pass ? '#c47bd1' : '#6e2a7d'; ctx.lineWidth = w*2; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(pX(a.pts[k-1][0], m.z), pY(a.pts[k-1][1], m.z)); ctx.lineTo(pX(a.pts[k][0], m.z), pY(a.pts[k][1], m.z)); ctx.stroke();
+          }
+        }
+        ctx.fillStyle = '#f2c6f7';
+        for(let k=2; k<a.pts.length; k+=2){ ctx.beginPath(); ctx.arc(pX(a.pts[k][0], m.z) + s*.6, pY(a.pts[k][1], m.z), Math.max(1, (1.2 - k*.05)*s*.5), 0, 7); ctx.fill(); }
+      }
+      continue;
+    }
+    const D = MON_DEF[m.type], X = pX(m.x, m.z), Y = pY(m.y - .5, m.z), H = D.h*s;
+    ctx.save(); ctx.translate(X, Y); if(m.dir < 0) ctx.scale(-1, 1);
+    const walk = Math.sin(m.t*(m.type === 'kaiju' ? 3 : 5))*(m.air ? 0 : 1);
+    if(m.type === 'gorilla'){
+      ctx.fillStyle = '#2b2422';
+      ctx.fillRect(-H*.2 + walk*H*.04, -H*.32, H*.14, H*.32); ctx.fillRect(H*.06 - walk*H*.04, -H*.32, H*.14, H*.32);   // ben
+      ctx.beginPath(); ctx.ellipse(0, -H*.55, H*.28, H*.3, 0, 0, 7); ctx.fill();                                    // krop
+      ctx.fillStyle = '#5a4a44'; ctx.beginPath(); ctx.ellipse(H*.06, -H*.55, H*.15, H*.18, 0, 0, 7); ctx.fill();    // bryst
+      ctx.fillStyle = '#2b2422';
+      const reach = m.swing > 0 ? 1 : 0;
+      ctx.save(); ctx.translate(H*.18, -H*.72); ctx.rotate(reach ? -1.3 : .2 + walk*.3); ctx.fillRect(-H*.06, 0, H*.13, H*.48); ctx.restore();   // forreste arm (slår)
+      ctx.save(); ctx.translate(-H*.18, -H*.72); ctx.rotate(-.2 - walk*.3); ctx.fillRect(-H*.07, 0, H*.13, H*.46); ctx.restore();
+      ctx.beginPath(); ctx.arc(H*.08, -H*.88, H*.13, 0, 7); ctx.fill();                                              // hoved
+      ctx.fillStyle = '#6b5a52'; ctx.beginPath(); ctx.ellipse(H*.15, -H*.85, H*.08, H*.07, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ff3b30'; ctx.beginPath(); ctx.arc(H*.15, -H*.9, Math.max(1.5, H*.018), 0, 7); ctx.fill();
+    } else {
+      // kaiju: krop, hale, rygpigge, hoved med kæbe
+      const breath = m.breath > 0;
+      ctx.fillStyle = '#3f5a48';
+      ctx.beginPath(); ctx.moveTo(-H*.1, -H*.35); ctx.quadraticCurveTo(-H*.55, -H*.2 + walk*H*.02, -H*.75, -H*.03); ctx.lineTo(-H*.7, 0); ctx.quadraticCurveTo(-H*.4, -H*.1, -H*.05, -H*.18); ctx.fill();   // hale
+      ctx.fillRect(-H*.14 + walk*H*.03, -H*.3, H*.12, H*.3); ctx.fillRect(H*.04 - walk*H*.03, -H*.3, H*.12, H*.3);
+      ctx.beginPath(); ctx.ellipse(0, -H*.5, H*.2, H*.27, -.15, 0, 7); ctx.fill();
+      ctx.fillStyle = '#56785f'; ctx.beginPath(); ctx.ellipse(H*.06, -H*.5, H*.1, H*.2, -.15, 0, 7); ctx.fill();
+      ctx.fillStyle = '#3f5a48'; ctx.beginPath(); ctx.ellipse(H*.12, -H*.83, H*.12, H*.08, .2, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(H*.12, -H*.8); ctx.lineTo(H*.26, -H*.8 + (breath ? H*.05 : H*.02)); ctx.lineTo(H*.12, -H*.75); ctx.fill();   // kæbe
+      ctx.fillStyle = '#ffd60a'; ctx.beginPath(); ctx.arc(H*.17, -H*.86, Math.max(1.5, H*.012), 0, 7); ctx.fill();
+      ctx.fillStyle = breath ? '#8fe3ff' : '#cfd8d2';
+      for(let k=0;k<6;k++){ const bx = -H*.12 - k*H*.06, by = -H*.75 + k*H*.08; ctx.beginPath(); ctx.moveTo(bx - H*.03, by + H*.03); ctx.lineTo(bx - H*.06, by - H*.06); ctx.lineTo(bx + H*.02, by); ctx.fill(); }
+      ctx.fillStyle = '#3f5a48'; ctx.fillRect(H*.1, -H*.62, H*.1, H*.05);   // arm
+    }
+    ctx.restore();
+  }
+}
+
+// =====================================================================
+// MISSIONER – 24 baner med faste byer, begrænsede våben, mål og stjerner
+// =====================================================================
+const INF = Infinity;
+const ALL_TOOLS = () => ({raket:INF, bombe:INF, mega:INF, c4:INF, bor:INF, skaelv:INF, lyn:INF, ild:INF, tornado:INF, tsunami:INF, laser:INF, sorthul:INF, meteor:INF, ufo:INF, gorilla:INF, kaiju:INF, tentakel:INF});
+const MISSIONS = [
+  {id:'s1', theme:'storby', seed:'mission-storby', title:'Første smæk', desc:'Vælt en bygning med højst 5 bomber.', tools:{bombe:5}, goal:{type:'fell', n:1}, stars:{type:'left', t:[3, 1]}},
+  {id:'s2', theme:'storby', seed:'mission-storby', title:'Højhuset skal ned', desc:'Vælt det højeste hus i forreste række – uden at ramme naboerne.', tools:{c4:8, bombe:1}, goal:{type:'target', pick:'tallest'}, stars:{type:'collat', t:[0, 1]}},
+  {id:'s3', theme:'storby', seed:'mission-storby', title:'Tidsrøveren', desc:'Lav skade for 10 mio. kr. på 60 sekunder.', time:60, tools:{raket:INF, bombe:INF}, goal:{type:'damage', n:10e6}, stars:{type:'time', t:[30, 45]}},
+  {id:'s4', theme:'storby', seed:'mission-storby', title:'Rømning', desc:'Skræm byen med lyn, så mindst 70 % kommer med busserne. Højst 5 må blive ramt.', time:90, tools:{lyn:6}, goal:{type:'evac', pct:.7, maxHit:5}, stars:{type:'count', t:[.9, .8]}},
+  {id:'s5', theme:'storby', seed:'mission-storby', title:'Kaiju-angreb', desc:'En kaiju går mod byen. Styr den væk fra folk – mindst 40 % skal reddes på 70 sekunder.', time:70, tools:{kaiju:0}, events:[{t:.5, kaiju:WX-15}], goal:{type:'evac', pct:.4, maxHit:999, alarmAll:true}, stars:{type:'count', t:[.7, .55]}},
+  {id:'s6', theme:'storby', seed:'mission-storby', title:'Meteorregn', desc:'Vælt 5 bygninger med 3 meteorer.', tools:{meteor:3}, goal:{type:'fell', n:5}, stars:{type:'count', t:[9, 7]}},
+  {id:'s7', theme:'storby', seed:'mission-storby', title:'Boremaskinen', desc:'Bor stueetagen væk under murstenshuset, så det falder. 20 sekunders boring.', tools:{bor:20}, goal:{type:'target', pick:'front-brick'}, stars:{type:'left', t:[10, 5]}},
+  {id:'s8', theme:'storby', seed:'mission-storby', title:'Total ødelæggelse', desc:'Alle våben – lav 60 mio. kr. i skade på 90 sekunder.', time:90, tools:'all', goal:{type:'damage', n:60e6}, stars:{type:'count', t:[150e6, 100e6]}},
+
+  {id:'h1', theme:'havneby', seed:'mission-havn', title:'Kranerne', desc:'Vælt begge havnekraner. Stål kræver C4 eller megabombe.', tools:{c4:8, mega:2}, goal:{type:'fellType', bt:'kran', n:2}, stars:{type:'left', t:[5, 2]}},
+  {id:'h2', theme:'havneby', seed:'mission-havn', title:'Tsunami-alarm', desc:'En tsunami rammer om 35 sekunder. Brug lynene til at få folk ud i tide – mindst 60 % skal reddes.', time:80, tools:{lyn:5}, events:[{t:35, tsunami:true}], goal:{type:'evac', pct:.6, maxHit:999}, stars:{type:'count', t:[.85, .72]}},
+  {id:'h3', theme:'havneby', seed:'mission-havn', title:'Pakhusbranden', desc:'Brænd 2 pakhuse ned. Pakhusene har bjælkelag af træ.', time:150, tools:{ild:INF, lyn:3}, goal:{type:'fellType', bt:'pakhus', n:2}, stars:{type:'time', t:[70, 110]}},
+  {id:'h4', theme:'havneby', seed:'mission-havn', title:'Bilkirkegården', desc:'Smadr 8 biler.', tools:{raket:8, bombe:6}, goal:{type:'wrecks', n:8}, stars:{type:'left', t:[6, 3]}},
+  {id:'h5', theme:'havneby', seed:'mission-havn', title:'UFO-høst', desc:'Løft 250 brokker med UFO\'ens trækstråle på 90 sekunder.', time:90, tools:{ufo:1, bombe:4}, goal:{type:'lifted', n:250}, stars:{type:'time', t:[45, 70]}},
+  {id:'h6', theme:'havneby', seed:'mission-havn', title:'Gorilla på havnen', desc:'Lad gorillaen vælte 4 bygninger på 90 sekunder.', time:90, tools:{gorilla:1}, goal:{type:'fell', n:4}, stars:{type:'time', t:[45, 70]}},
+  {id:'h7', theme:'havneby', seed:'mission-havn', title:'Tornado-jagt', desc:'Lav skade for 600.000 kr. med 2 tornadoer.', tools:{tornado:2}, goal:{type:'damage', n:6e5}, stars:{type:'count', t:[1.5e6, 1e6]}},
+  {id:'h8', theme:'havneby', seed:'mission-havn', title:'Havnens fald', desc:'Alle våben – vælt 15 bygninger på 120 sekunder.', time:120, tools:'all', goal:{type:'fell', n:15}, stars:{type:'count', t:[25, 20]}},
+
+  {id:'l1', theme:'landsby', seed:'mission-land', title:'Kirkeklokken', desc:'Vælt kirken – uden at ramme naboerne.', tools:{bombe:3, c4:8}, goal:{type:'target', pick:'kirke'}, stars:{type:'collat', t:[0, 1]}},
+  {id:'l2', theme:'landsby', seed:'mission-land', title:'Bålfest', desc:'Brænd 3 træhuse ned.', time:150, tools:{ild:3, lyn:2}, goal:{type:'fellType', bt:'træhus', n:3}, stars:{type:'time', t:[60, 100]}},
+  {id:'l3', theme:'landsby', seed:'mission-land', title:'Jordskælvet', desc:'Vælt 6 bygninger med jordskælv.', tools:{skaelv:3}, goal:{type:'fell', n:6}, stars:{type:'count', t:[14, 10]}},
+  {id:'l4', theme:'landsby', seed:'mission-land', title:'Stille nat', desc:'Skræm landsbyen tom med lyn – mindst 70 % reddet, højst 5 ramt.', time:90, tools:{lyn:6}, goal:{type:'evac', pct:.7, maxHit:5}, stars:{type:'count', t:[.9, .8]}},
+  {id:'l5', theme:'landsby', seed:'mission-land', title:'Tentakler i kornet', desc:'Vælt 3 bygninger med tentaklerne på 60 sekunder.', time:60, tools:{tentakel:2}, goal:{type:'fell', n:3}, stars:{type:'time', t:[25, 40]}},
+  {id:'l6', theme:'landsby', seed:'mission-land', title:'Sort hul', desc:'Lad 2 sorte huller sluge for 1 mio. kr.', tools:{sorthul:2}, goal:{type:'damage', n:1e6}, stars:{type:'count', t:[2.5e6, 1.7e6]}},
+  {id:'l7', theme:'landsby', seed:'mission-land', title:'Oversvømmelsen', desc:'Vælt 4 bygninger med tsunamien og 3 bomber.', tools:{tsunami:1, bombe:3}, goal:{type:'fell', n:4}, stars:{type:'count', t:[8, 6]}},
+  {id:'l8', theme:'landsby', seed:'mission-land', title:'Landsbyens endeligt', desc:'Alle våben – vælt 70 % af landsbyen på 120 sekunder.', time:120, tools:'all', goal:{type:'fellPct', pct:.7}, stars:{type:'count', t:[.9, .8]}}
+];
+const THEME_ORDER = ['storby', 'havneby', 'landsby'];
+let mission = null;
+function misProgress(){ try { return JSON.parse(localStorage.getItem('kkd-mis') || '{}') || {}; } catch(_) { return {}; } }
+function misUnlocked(def){ const list = MISSIONS.filter(m => m.theme === def.theme), k = list.indexOf(def); return k === 0 || (misProgress()[list[k-1].id] || 0) > 0; }
+function useTool(t){
+  if(!mission) return true;
+  if(mission.result) return false;
+  const u = mission.uses[t];
+  if(u === undefined) return false;
+  if(u === INF) return true;
+  if(u <= 0){ toast('Ikke flere af dette våben'); return false; }
+  mission.uses[t] = u - 1; updateCounts();
+  return true;
+}
+function spendTime(t, dt){
+  if(!mission) return true;
+  if(mission.result) return false;
+  const u = mission.uses[t];
+  if(u === undefined || u <= 0) return false;
+  if(u !== INF){ mission.uses[t] = Math.max(0, u - dt); if(Math.ceil(u) !== Math.ceil(mission.uses[t])) updateCounts(); }
+  return true;
+}
+function updateCounts(){
+  for(const b of document.querySelectorAll('.tool')){
+    const k = b.querySelector ? b.querySelector('kbd') : null; if(!k) continue;
+    if(!mission){ continue; }
+    const u = mission.uses[b.dataset.tool];
+    k.textContent = u === undefined ? '' : u === INF ? '∞' : (b.dataset.tool === 'bor' || b.dataset.tool === 'laser') ? Math.ceil(u) + 's' : String(u);
+  }
+}
+function pickTarget(kind){
+  const cand = bld.filter(b => b && b.type !== 'kran');
+  if(kind === 'kirke') return (cand.find(b => b.type === 'kirke') || cand[0]).id;
+  if(kind === 'front-brick'){ const f = cand.filter(b => b.z0 < 15 && b.type === 'mursten' && b.x0 > 40 && b.y1 - b.y0 >= 8); return (f[0] || cand[0]).id; }
+  const f = cand.filter(b => b.z0 < 15).sort((a, b) => (b.y1 - b.y0) - (a.y1 - a.y0));
+  return (f[0] || cand[0]).id;
+}
+function startMission(id){
+  const def = MISSIONS.find(m => m.id === id); if(!def) return;
+  theme = def.theme; themeSel.value = theme;
+  mission = null;
+  startingMission = true; start(def.seed); startingMission = false;
+  session = null;                                   // missioner tæller ikke i Top 10
+  mission = {def, uses: def.tools === 'all' ? ALL_TOOLS() : Object.assign({}, def.tools), t:0, result:null, quiet:0, lifted:0, targetId:0, events:(def.events || []).map(e => Object.assign({}, e))};
+  if(def.goal.pick) mission.targetId = pickTarget(def.goal.pick);
+  if(def.goal.alarmAll){ for(const p of people) panic(p); for(const b of bld) if(b) b.alarm = true; }
+  document.body.classList.add('mission');
+  setupMissionTools();
+  $('mTitle').textContent = def.title; $('mBar').hidden = false;
+  $('misPanel').hidden = true; $('resPanel').hidden = true;
+  toast(def.desc);
+  if(mission.targetId){ const b = bld[mission.targetId]; cam.x = Math.max(-20, (b.x0 + b.x1)/2 - view.w/cam.s/2); clampCam(); }
+}
+function exitMission(){
+  mission = null;
+  document.body.classList.remove('mission');
+  $('mBar').hidden = true; $('resPanel').hidden = true;
+  setupMissionTools();
+}
+function setupMissionTools(){
+  $('cats').hidden = !!mission;
+  if(!mission){ setCat(cat); return; }
+  let first = null;
+  for(const b of document.querySelectorAll('.tool')){ const on = b.dataset.tool in mission.uses; b.hidden = !on; if(on && !first) first = b.dataset.tool; }
+  if(!(tool in mission.uses)) setTool(first);
+  updateCounts();
+}
+function goalState(){
+  const M = mission, g = M.def.goal;
+  switch(g.type){
+    case 'fell': return {v: stats.fallen, done: stats.fallen >= g.n, text: `Faldne bygninger ${stats.fallen}/${g.n}`};
+    case 'fellType': { const v = bld.filter(b => b && b.type === g.bt && b.fallen).length, nm = {kran:'Kraner', pakhus:'Pakhuse', træhus:'Træhuse'}[g.bt] || g.bt; return {v, done: v >= g.n, text: `${nm} væltet ${v}/${g.n}`}; }
+    case 'fellPct': { const v = stats.fallen / Math.max(1, bld.length - 1); return {v, done: v >= g.pct, text: `Væltet ${Math.round(v*100)} % / ${Math.round(g.pct*100)} %`}; }
+    case 'target': { const b = bld[M.targetId]; return {v: b && b.fallen ? 1 : 0, done: !!(b && b.fallen), text: 'Vælt målet (markeret)'}; }
+    case 'damage': return {v: stats.damage, done: stats.damage >= g.n, text: `Skade ${fmtKr(stats.damage)} / ${fmtKr(g.n)}`};
+    case 'wrecks': { const v = cars.filter(c => c.dead).length; return {v, done: v >= g.n, text: `Bilvrag ${v}/${g.n}`}; }
+    case 'lifted': return {v: M.lifted, done: M.lifted >= g.n, text: `Løftet ${M.lifted}/${g.n} brokker`};
+    case 'evac': {
+      const tot = Math.max(1, stats.people), pct = stats.saved / tot;
+      const left = people.filter(p => p.st !== 'saved' && p.st !== 'lost' && !p.hit).length;
+      const tooMany = stats.hit > g.maxHit;
+      return {v: pct, done: !tooMany && left === 0 && pct >= g.pct, fail: tooMany ? 'For mange blev ramt' : null, end: !tooMany && pct >= g.pct,
+              text: `Reddet ${Math.round(pct*100)} % / ${Math.round(g.pct*100)} %` + (g.maxHit < 999 ? ` · ramt ${stats.hit}/${g.maxHit}` : '')};
+    }
+  }
+  return {v:0, done:false, text:''};
+}
+function starsFor(g){
+  const M = mission, st = M.def.stars, t = st.t;
+  if(st.type === 'left'){ let v = 0; for(const k in M.uses) if(M.uses[k] !== INF) v += Math.floor(M.uses[k]); return v >= t[0] ? 3 : v >= t[1] ? 2 : 1; }
+  if(st.type === 'time') return M.t <= t[0] ? 3 : M.t <= t[1] ? 2 : 1;
+  if(st.type === 'collat'){ const v = stats.fallen - (bld[M.targetId] && bld[M.targetId].fallen ? 1 : 0); return v <= t[0] ? 3 : v <= t[1] ? 2 : 1; }
+  return g.v >= t[0] ? 3 : g.v >= t[1] ? 2 : 1;
+}
+function stepMission(dt){
+  const M = mission; if(!M || M.result) return;
+  M.t += dt;
+  for(const e of M.events) if(!e.done && M.t >= e.t){
+    e.done = true;
+    if(e.tsunami) startTsunami();
+    if(e.kaiju) spawnMonster('kaiju', e.kaiju);
+  }
+  const g = goalState();
+  M.g = g;
+  if(g.fail){ finishMission(false, g.fail, g); return; }
+  // "jo mere, jo flere stjerner"-mål gøres først op, når det hele er faldet til ro (eller tiden er gået)
+  const countWait = M.def.stars.type === 'count' && M.def.goal.type !== 'evac';
+  if(g.done && !countWait){ finishMission(true, '', g); return; }
+  if(M.def.time && M.t >= M.def.time){ const ok = g.done || !!g.end; finishMission(ok, ok ? '' : 'Tiden løb ud', g); return; }
+  const left = Object.keys(M.uses).some(k => M.uses[k] > 0);
+  const busy = bodies.length || shots.length || burning.size || tornados.length || waves.length || holes.length || monsters.length || charges.length || quake || (ufo && ufo.beam) || active.length > 30;
+  M.quiet = busy ? 0 : M.quiet + dt;
+  if(M.def.goal.type !== 'evac' && M.quiet > (left ? 12 : 5) && (!left || (countWait && g.done && !M.def.time))){ const ok = g.done || !!g.end; finishMission(ok, ok ? '' : 'Ikke flere våben', g); }
+}
+function finishMission(ok, reason, g){
+  const M = mission;
+  const stars = ok ? starsFor(g) : 0;
+  M.result = {ok, stars, reason};
+  holdEnd();
+  if(ok){ const pr = misProgress(); pr[M.def.id] = Math.max(pr[M.def.id] || 0, stars); try { localStorage.setItem('kkd-mis', JSON.stringify(pr)); } catch(_) {} }
+  $('resTitle').textContent = ok ? 'Mission klaret!' : 'Mission mislykkedes';
+  $('resStars').innerHTML = ok ? '★'.repeat(stars) + '<i>' + '★'.repeat(3 - stars) + '</i>' : '<i>★★★</i>';
+  $('resText').textContent = (ok ? '' : reason + ' · ') + g.text;
+  const list = MISSIONS.filter(m => m.theme === M.def.theme), nx = list[list.indexOf(M.def) + 1];
+  $('resNext').hidden = !(ok && nx); $('resNext').dataset.id = nx ? nx.id : '';
+  $('resPanel').hidden = false;
+  if(ok){ tone('triangle', 523, 523, .15, .15); tone('triangle', 659, 659, .15, .15, .15); tone('triangle', 784, 784, .3, .15, .3); }
+  else { tone('sawtooth', 300, 150, .5, .1); }
+}
+function showMis(on){
+  const el = $('misPanel');
+  if(!on){ el.hidden = true; return; }
+  const pr = misProgress(), box = $('misList');
+  box.innerHTML = '';
+  for(const th of THEME_ORDER){
+    const h = document.createElement('div'); h.className = 'misTheme'; h.textContent = THEMES[th].name; box.appendChild(h);
+    const grid = document.createElement('div'); grid.className = 'misGrid'; box.appendChild(grid);
+    MISSIONS.filter(m => m.theme === th).forEach((m, k) => {
+      const b = document.createElement('button'), st = pr[m.id] || 0, open = misUnlocked(m);
+      b.className = 'mis'; b.disabled = !open;
+      b.innerHTML = `<b>${k+1}. ${m.title}</b><small>${open ? m.desc : 'Låst – klar den forrige først'}</small><span class="st">${'★'.repeat(st)}<i>${'★'.repeat(3 - st)}</i></span>`;
+      b.addEventListener('click', () => { if(open) startMission(m.id); });
+      grid.appendChild(b);
+    });
+  }
+  el.hidden = false;
+}
+function hudMission(){
+  if(!mission || !mission.g) return;
+  const M = mission;
+  $('mGoal').textContent = M.g.text;
+  $('mTime').textContent = M.def.time ? `${Math.max(0, Math.ceil(M.def.time - M.t))} s` : '';
+}
+// mål-markering
+function drawMissionTarget(pX, pY, s, t){
+  if(!mission || !mission.targetId) return;
+  const b = bld[mission.targetId]; if(!b || b.fallen) return;
+  const X = pX((b.x0 + b.x1)/2, b.z0), Y = pY(b.y1 + 4 + Math.sin(t*4), b.z0);
+  ctx.fillStyle = '#ff3b30'; ctx.beginPath(); ctx.moveTo(X, Y + s*2); ctx.lineTo(X - s*1.4, Y); ctx.lineTo(X + s*1.4, Y); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,59,48,.8)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+  ctx.strokeRect(pX(b.x0 - .5, b.z0), pY(b.y1 + .5, b.z0), (b.x1 - b.x0 + 1)*s, (b.y1 - b.y0 + 1)*s); ctx.setLineDash([]);
+}
+
+// =====================================================================
+// BYG SELV – spillerens egne bygninger
+// =====================================================================
+const WALLS = {beton:CONC, mursten:BRICK, træ:WOOD};
+const DES_COLS = [[204,198,186],[168,82,58],[196,156,104],[176,58,48],[228,228,222],[120,135,150],[60,90,120],[90,130,80]];
+let startingMission = false, placing = null;
+function loadDesigns(){ try { const a = JSON.parse(localStorage.getItem('kkd-designs') || '[]'); return Array.isArray(a) ? a.filter(validDesign) : []; } catch(_) { return []; } }
+function saveDesigns(a){ try { localStorage.setItem('kkd-designs', JSON.stringify(a)); } catch(_) {} }
+function mixOn(){ try { return localStorage.getItem('kkd-mix') === '1'; } catch(_) { return false; } }
+function validDesign(d){ return d && d.W >= 4 && d.W <= 22 && d.D >= 3 && d.D <= 12 && d.H >= 3 && d.H <= 45 && typeof d.grid === 'string' && d.grid.length === d.W*d.H; }
+function autoWindows(W, H){ let g = ''; for(let y=0; y<H; y++) for(let x=0; x<W; x++){ const f = y % 4; g += (x === 0 || x === W-1 || f === 0) ? 'w' : (f >= 2 && x % 3 !== 0) ? 'g' : 'w'; } return g; }
+function newDesign(){ const W = 10, H = 17; return {name:'Mit hus', W, D:8, H, wall:'mursten', col:1, roof:'saddel', floors:true, grid: autoWindows(W, H)}; }
+function resizeDesign(d, W, D, H){
+  let g = '';
+  for(let y=0; y<H; y++) for(let x=0; x<W; x++) g += (x < d.W && y < d.H) ? d.grid[x + d.W*y] : (x === 0 || x === W-1 || y % 4 === 0) ? 'w' : 'g';
+  d.W = W; d.D = D; d.H = H; d.grid = g;
+}
+// cellerne i et design (lokale koordinater): vægge efter facadetegningen, etageadskillelser, søjler, tag
+function designCells(d){
+  const out = [], wall = WALLS[d.wall] || BRICK, floorM = wall === WOOD ? WOOD : CONC;
+  const code = c => c === 'w' ? wall : c === 'g' ? GLASS : c === 's' ? STEEL : 0;
+  for(let ly=0; ly<d.H; ly++) for(let z=0; z<d.D; z++) for(let x=0; x<d.W; x++){
+    const ex = x === 0 || x === d.W-1, ez = z === 0 || z === d.D-1;
+    let m = 0;
+    if(ly === 0 || ly === d.H-1 || (d.floors && ly % 4 === 0)) m = floorM;
+    else if(ex && ez) m = wall;
+    else if(ez) m = code(d.grid[x + d.W*ly]);
+    else if(ex) m = code(d.grid[(z % d.W) + d.W*ly]);
+    else if(d.floors && x % 6 === 0 && z % 6 === 0) m = floorM;
+    if(m) out.push([x, ly, z, m]);
+  }
+  if(d.roof === 'saddel'){
+    for(let k=0; ; k++){ const za = k, zb = d.D-1-k; if(za > zb) break;
+      for(let z=za; z<=zb; z++) for(let x=0; x<d.W; x++){ if(z === za || z === zb) out.push([x, d.H + k, z, ROOF]); else if(x === 0 || x === d.W-1) out.push([x, d.H + k, z, wall]); } }
+  }
+  return out;
+}
+function buildDesign(d, x0, z0){
+  const id = bld.length, wall = WALLS[d.wall] || BRICK;
+  const b = {id, type:'egen', name:d.name, x0, x1:x0 + d.W - 1, z0, z1:z0 + d.D - 1, y0:GY, y1:GY + d.H - 1, fm:wall, col:DES_COLS[d.col] || DES_COLS[0], glass:[110,150,180], roof:[150,60,44], n0:0, n:0, fallen:false};
+  bld.push(b);
+  for(const [x, y, z, m] of designCells(d)){ const X = x0 + x, Y = GY + y, Z = z0 + z; if(X < 0 || X >= WX || Y >= HY || Z >= DZ) continue; const i = idx(X, Y, Z); mat[i] = m; bid[i] = id; b.n0++; }
+  b.n = b.n0;
+  return b;
+}
+function removeBuilding(b){
+  for(let y=b.y0; y<HY; y++) for(let z=b.z0; z<=b.z1; z++) for(let x=b.x0; x<=b.x1; x++){ const i = idx(x,y,z); if(bid[i] === b.id){ mat[i] = 0; bid[i] = 0; } }
+  b.gone = true;
+  for(const p of people) if(p.b === b.id && p.st !== 'saved' && p.st !== 'lost'){ p.b = 0; p.st = 'walk'; p.z = b.z0 < 15 ? SIDE_F : SIDE_B; p.y = GY; p.falling = false; }
+}
+function placeDesign(d, wx, back){
+  const zA = back ? 16 : 4, zB = back ? 30 : 14, span = zB - zA + 1;
+  if(d.D > span){ toast('Huset er for dybt til grunden'); return null; }
+  const x0 = Math.max(1, Math.min(WX - d.W - 2, Math.round(wx - d.W/2))), z0 = zA + ((span - d.D) >> 1);
+  // ryd grunden: bygninger, træer, lygtepæle og brokker, der står i vejen
+  for(const b of bld) if(b && !b.gone && b.x1 >= x0 - 1 && b.x0 <= x0 + d.W && b.z1 >= zA && b.z0 <= zB) removeBuilding(b);
+  for(let y=GY; y<HY; y++) for(let z=zA; z<=zB; z++) for(let x=Math.max(0, x0-1); x<=Math.min(WX-1, x0+d.W); x++){ const i = idx(x,y,z); if(mat[i] && !isGround(mat[i] & MM)){ mat[i] = 0; bid[i] = 0; } }
+  const b = buildDesign(d, x0, z0);
+  calibrate(b);
+  for(let x=Math.max(0, x0-3); x<=Math.min(WX-1, x0+d.W+3); x++) dirtyCol(x);
+  // et par beboere
+  const floors = Math.max(1, Math.floor((d.H - 1)/4));
+  for(let k=0; k<Math.min(6, floors + 2); k++){
+    const y = GY + 4*(k % floors) + 1, x = x0 + 1.5 + Math.random()*Math.max(0, d.W - 3), z = z0 + 1 + Math.floor(Math.random()*Math.max(1, d.D - 2));
+    if(solidAt(x, y, z) || !solidAt(x, y - 1, z)) continue;
+    people.push({x, y, z, vy:0, dir:1, st:'inside', b:b.id, t:0, turnT:3, shirt:SHIRTS[k % SHIRTS.length], skin:SKIN[k % SKIN.length], sp:.8, hit:false, falling:false, fallY:0, rot:0, vx:0, vr:0, zAcc:0, bus:null});
+    stats.people++;
+  }
+  toast(`${d.name} er bygget`);
+  return b;
+}
+
+// --- designerens brugerflade
+let des = null, desIdx = -1, desMat = 'w', desPaint = false;
+function openDesigner(){
+  if(mission){ toast('Afslut missionen først'); return; }
+  const list = loadDesigns();
+  if(!des){ if(list.length){ des = JSON.parse(JSON.stringify(list[0])); desIdx = 0; } else { des = newDesign(); desIdx = -1; } }
+  $('desMix').checked = mixOn();
+  syncDesigner();
+  $('desPanel').hidden = false;
+}
+function syncDesigner(){
+  $('desName').value = des.name; $('dW').textContent = des.W; $('dD').textContent = des.D; $('dH').textContent = des.H;
+  $('desWall').value = des.wall; $('desRoof').value = des.roof; $('desFloors').checked = des.floors;
+  const cols = $('desCols'); cols.innerHTML = '';
+  DES_COLS.forEach((c, k) => { const b = document.createElement('button'); b.style.background = `rgb(${c})`; b.setAttribute('aria-pressed', String(k === des.col)); b.title = 'Farve'; b.addEventListener('click', () => { des.col = k; syncDesigner(); }); cols.appendChild(b); });
+  const wc = desColor('w'); $('palW').style.background = `rgb(${wc})`;
+  const list = loadDesigns(), box = $('desList'); box.innerHTML = '';
+  list.forEach((d, k) => { const b = document.createElement('button'); b.textContent = `${d.name} (${d.W}×${d.D}×${d.H})`; if(k === desIdx) b.className = 'cur'; b.addEventListener('click', () => { des = JSON.parse(JSON.stringify(d)); desIdx = k; syncDesigner(); }); box.appendChild(b); });
+  drawDesGrid(); drawDesPrev();
+}
+function desColor(c){
+  if(c === 'g') return [128,180,220];
+  if(c === 's') return [112,120,130];
+  if(c === '.') return null;
+  const wall = WALLS[des.wall] || BRICK;
+  return wall === BRICK || wall === WOOD || wall === CONC ? (DES_COLS[des.col] || MAT[wall].col) : MAT[wall].col;
+}
+function desCell(){ return Math.max(7, Math.min(28, Math.floor(Math.min(440/des.W, 340/des.H)))); }
+function drawDesGrid(){
+  const c = $('desGrid'), g = c.getContext('2d'), cs = desCell();
+  c.width = des.W*cs; c.height = des.H*cs;
+  g.fillStyle = '#9cc3dc'; g.fillRect(0, 0, c.width, c.height);
+  for(let y=0; y<des.H; y++) for(let x=0; x<des.W; x++){
+    const ch = des.grid[x + des.W*y], col = desColor(ch), Y = (des.H-1-y)*cs;
+    const floor = y === 0 || y === des.H-1 || (des.floors && y % 4 === 0);
+    if(floor){ g.fillStyle = 'rgb(176,174,168)'; g.fillRect(x*cs, Y, cs, cs); continue; }
+    if(col){ g.fillStyle = `rgb(${col})`; g.fillRect(x*cs, Y, cs, cs); }
+    if(ch === 'g'){ g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x*cs + 2, Y + 2, cs*.35, cs*.35); }
+  }
+  g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 1;
+  for(let x=0; x<=des.W; x++){ g.beginPath(); g.moveTo(x*cs + .5, 0); g.lineTo(x*cs + .5, c.height); g.stroke(); }
+  for(let y=0; y<=des.H; y++){ g.beginPath(); g.moveTo(0, y*cs + .5); g.lineTo(c.width, y*cs + .5); g.stroke(); }
+}
+function drawDesPrev(){
+  const c = $('desPrev'), g = c.getContext('2d');
+  const cells = designCells(des), nx = des.W, nz = des.D;
+  let ny = 0; for(const q of cells) ny = Math.max(ny, q[1] + 1);
+  const w = nx*P + (nz-1)*2 + 6, h = ny*P + nz*2;
+  const occ = new Map(); for(const q of cells) occ.set(q[0] + ',' + q[1] + ',' + q[2], q[3]);
+  const off = document.createElement('canvas'); off.width = w; off.height = h;
+  const og = off.getContext('2d'), im = og.createImageData(w, h), px = new Uint32Array(im.data.buffer);
+  const has = (x,y,z) => occ.has(x + ',' + y + ',' + z);
+  const colOf = m => { const cc = m === ROOF ? [150,60,44] : m === GLASS ? [128,180,220] : m === STEEL ? [112,120,130] : m === (WALLS[des.wall] || BRICK) ? (DES_COLS[des.col] || MAT[m].col) : MAT[m].col; return (255<<24 | cc[2]<<16 | cc[1]<<8 | cc[0]) >>> 0; };
+  for(let z=nz-1; z>=0; z--) for(let y=0; y<ny; y++) for(let x=0; x<nx; x++){
+    const m = occ.get(x + ',' + y + ',' + z); if(!m) continue;
+    const front = !has(x,y,z-1), top = !has(x,y+1,z), right = !has(x+1,y,z);
+    if(!front && !top && !right) continue;
+    cube(px, w, h, x*P + z*2, (ny-1-y)*P + (nz-z)*2, colOf(m), front, top, right, 0, w);
+  }
+  og.putImageData(im, 0, 0);
+  g.clearRect(0, 0, c.width, c.height);
+  const k = Math.min((c.width - 20)/w, (c.height - 20)/h);
+  g.imageSmoothingEnabled = false;
+  g.drawImage(off, (c.width - w*k)/2, (c.height - h*k)/2, w*k, h*k);
+}
+function desPaintAt(e){
+  const c = $('desGrid'), r = c.getBoundingClientRect(), cs = desCell();
+  const x = Math.floor((e.clientX - r.left)/(r.width/des.W)), y = des.H - 1 - Math.floor((e.clientY - r.top)/(r.height/des.H));
+  if(x < 0 || x >= des.W || y < 0 || y >= des.H) return;
+  const i = x + des.W*y;
+  if(des.grid[i] === desMat) return;
+  des.grid = des.grid.slice(0, i) + desMat + des.grid.slice(i + 1);
+  drawDesGrid(); drawDesPrev();
+}
+function desSave(){
+  des.name = ($('desName').value || 'Mit hus').trim().slice(0, 20) || 'Mit hus';
+  const list = loadDesigns();
+  if(desIdx >= 0 && desIdx < list.length) list[desIdx] = JSON.parse(JSON.stringify(des));
+  else { list.push(JSON.parse(JSON.stringify(des))); desIdx = list.length - 1; }
+  saveDesigns(list); syncDesigner(); toast(`${des.name} er gemt`);
+}
+
+// =====================================================================
+// LIV – figurer, biler og evakueringsbusser
+// =====================================================================
+const SIDE_F = 3, SIDE_B = 15;              // fortove (z) foran og bag forreste række
+const BUS_CAP = 15;
+let people = [], cars = [], buses = [], gaps = [], gapT = 0, spreadT = 0, lastBoing = 0, lastHonk = 0;
+const SHIRTS = ['#e4572e','#2e86de','#f2c14e','#4caf50','#9b59b6','#ff8fab','#17bebb','#f08a24','#f4f4f4','#3d5a80'];
+const SKIN = ['#f1c27d','#e0ac69','#c68642','#8d5524','#ffdbac'];
+const CARCOL = ['#d62828','#1d70b8','#f4f1de','#2a9d8f','#3a3a3a','#e9c46a','#8e9aaf','#6a4c93'];
+
+function solidAt(x, y, z){
+  const xi = Math.round(x), yi = Math.round(y);
+  if(yi < 0) return true;
+  if(xi < 0 || xi >= WX || yi >= HY || z < 0 || z >= DZ) return false;
+  return mat[xi + WX*(z + DZ*yi)] !== 0;
+}
+// stå-højde ved x: første faste celle under yRef+2, plus 1 (-99 = intet under)
+function surfaceAt(x, z, yRef){
+  const xi = Math.round(x);
+  if(xi < 0 || xi >= WX) return GY;
+  for(let y = Math.min(HY-1, Math.floor(yRef) + 2); y >= Math.max(0, Math.floor(yRef) - 8); y--) if(mat[xi + WX*(z + DZ*y)]) return y + 1;
+  return -99;
+}
+
+function genLife(sd){
+  const r = rngOf(sd + '#liv'), ri = (a, b) => a + Math.floor(r()*(b-a+1)), pick = a => a[Math.floor(r()*a.length)];
+  people = []; cars = []; buses = [];
+  const mk = o => people.push(Object.assign({x:0, y:GY, z:SIDE_F, vy:0, dir: r() < .5 ? -1 : 1, st:'walk', b:0, t:r()*10, turnT:3 + r()*6,
+    shirt:pick(SHIRTS), skin:pick(SKIN), sp:1 + r()*.6, hit:false, falling:false, fallY:0, rot:0, vx:0, vr:0, zAcc:0, bus:null}, o));
+  for(let k=0; k<45; k++){
+    const z = r() < .6 ? SIDE_F : SIDE_B, x = 4 + r()*(WX-8), y = surfaceAt(x, z, GY + 2);
+    if(y === GY && (mat[idx(Math.round(x), GY-1, z)] & MM) !== WATER) mk({x, z, y});
+  }
+  for(const b of bld){
+    if(!b) continue;
+    const floors = Math.max(1, Math.floor((b.y1 - b.y0) / 4)), n = Math.min(8, ri(1, floors + 1));
+    for(let k=0; k<n; k++){
+      const f = ri(0, floors-1), y = b.y0 + 4*f + 1, x = b.x0 + 2 + r()*Math.max(0, b.x1 - b.x0 - 4), z = ri(b.z0 + 1, Math.max(b.z0 + 1, b.z1 - 1));
+      if(solidAt(x, y, z) || solidAt(x, y+1, z) || !solidAt(x, y-1, z)) continue;
+      mk({x, y, z, st:'inside', b:b.id, sp:.6 + r()*.4});
+    }
+  }
+  for(const f of [.17, .5, .83]) buses.push({bus:true, x:WX*f, home:WX*f, z:1, y:GY, len:7, st:'wait', load:0, danger:0, t:0, dir:1, v:0, vy:0, vx:0, rot:0, vr:0, col:'#f2b705'});
+  for(let k=0; k<16; k++){
+    const lane = k % 2 ? 0 : 2;
+    cars.push({bus:false, x: (k/16)*WX + r()*10, z:lane, y:GY, len:3, dir: lane === 0 ? 1 : -1, v:0, vmax:5 + r()*4, st:'drive', vy:0, vx:0, rot:0, vr:0, col:pick(CARCOL), stopT:0});
+  }
+  stats.people = people.length; stats.saved = 0; stats.hit = 0;
+  gapT = 0; spreadT = 0;
+}
+
+// passager mellem forreste rækkes huse (bagerste fortov -> forreste)
+function waterAt(x, z){ const xi = Math.round(x); return xi >= 0 && xi < WX && (mat[idx(xi, GY-2, z)] & MM) === WATER; }
+function findGaps(){
+  gaps = [];
+  for(let x=1; x<WX-1; x++){
+    if(waterAt(x, 10)) continue;
+    let ok = true, y = GY;
+    for(let z=SIDE_B-1; z>SIDE_F; z--){ const s = surfaceAt(x, z, y); if(s < 0 || s > y + 2){ ok = false; break; } y = s; }
+    if(ok) gaps.push(x);
+  }
+}
+function nearestGap(x){ let best = null, bd = 1e9; for(const g of gaps){ const d = Math.abs(g - x); if(d < bd){ bd = d; best = g; } } return best; }
+
+function panic(p){
+  if(p.st === 'walk') p.st = 'flee';
+  else if(p.st === 'inside') p.st = 'toStairs';
+}
+function alarm(x, y, rad){
+  for(const p of people) if(Math.abs(p.x - x) < rad && Math.abs(p.y - y) < rad + 6) panic(p);
+  for(const bu of buses) if(Math.abs(bu.x - x) < rad + 12) bu.danger = 6;
+  for(const b of bld) if(b && x > b.x0 - rad && x < b.x1 + rad && y < b.y1 + rad) b.alarm = true;
+}
+function hitPerson(p, vx, vy){
+  if(p.st === 'saved' || p.st === 'lost') return;
+  if(window.KKD_LOG) window.KKD_LOG.push({hit:true, st:p.st, x:+p.x.toFixed(1), y:+p.y.toFixed(1), z:p.z, b:p.b, fallY:p.fallY, falling:p.falling});
+  if(!p.hit){ p.hit = true; stats.hit++; boing(); }
+  if(vx || vy){ p.st = 'fly'; p.vx = vx; p.vy = vy; p.vr = (Math.random() - .5)*14; }
+  else { p.st = 'dizzy'; p.t = 0; }
+}
+function lifeBlast(x, y, z, r){
+  for(const p of people){
+    if(p.st === 'saved' || p.st === 'fly' || p.st === 'lost') continue;
+    const dx = p.x - x, dy = p.y + .8 - y, dz = (p.z - z)*.8, d = Math.hypot(dx, dy, dz) || .1;
+    if(d < r*1.15) hitPerson(p, dx/d*16 + (Math.random()-.5)*4, 9 + Math.random()*8);
+    else if(d < r*4) panic(p);
+  }
+  for(const v of cars.concat(buses)){
+    if(v.st === 'away' || v.st === 'lost') continue;
+    const dx = v.x - x, dy = v.y + .6 - y, dz = (v.z - z)*.8, d = Math.hypot(dx, dy, dz) || .1;
+    if(d < r*1.4 + v.len*.3) wreck(v, dx/d*14*(v.bus ? .4 : 1), 8 + Math.random()*6);
+  }
+  alarm(x, y, r*4);
+}
+function wreck(v, vx, vy){
+  if(v.st === 'lost' || v.st === 'away') return;
+  if(v.st !== 'wreck' && v.st !== 'fly' && !v.dead){ v.dead = true; stats.damage += v.bus ? 120000 : 30000; }
+  if(vx || vy){ v.st = 'fly'; v.vx = vx; v.vy = vy; v.vr = (Math.random()-.5)*(v.bus ? 3 : 8); }
+  else if(v.st !== 'fly') v.st = 'wreck';
+}
+function boing(){
+  const now = performance.now(); if(now - lastBoing < 150) return; lastBoing = now;
+  tone('sine', 320, 980, .18, .09); tone('triangle', 700, 260, .2, .05, .12);
+}
+
+function pickBus(p){
+  let best = null, bd = 1e9;
+  for(const b of buses){
+    if(b.st === 'wreck' || b.st === 'fly') continue;
+    const d = Math.abs(b.home - p.x) + (b.danger > 0 ? 150 : 0) + (b.st === 'wait' || b.st === 'return' ? 0 : 60);
+    if(d < bd){ bd = d; best = b; }
+  }
+  return best;
+}
+// gå langs x; klatrer op til 2 celler, går udenom forhindringer via nabo-z
+function walkX(p, dir, speed, dt, zMin, zMax){
+  const nx = p.x + dir*speed*dt;
+  if(Math.round(nx) === Math.round(p.x)){ p.x = nx; return true; }
+  let sfc = surfaceAt(nx, p.z, p.y);
+  if(sfc < 0 || sfc > p.y + 2.01){
+    for(const dz of [-1, 1]){
+      const z2 = p.z + dz; if(z2 < zMin || z2 > zMax) continue;
+      const s2 = surfaceAt(p.x, z2, p.y);
+      if(s2 > 0 && s2 <= p.y + 2.01){ p.z = z2; p.y = Math.max(p.y, s2); return true; }
+    }
+    return false;
+  }
+  p.x = nx;
+  if(sfc > p.y) p.y = sfc;            // trin op; nedad klares af tyngdekraften
+  return true;
+}
+function buried(p, y){
+  const xi = Math.round(p.x), yi = Math.round(y);
+  if(xi < 0 || xi >= WX || yi < 0 || yi >= HY) return false;
+  const i = xi + WX*(p.z + DZ*yi), v = mat[i];
+  return v !== 0 && ((v & LOOSE) !== 0 || bid[i] !== p.b);
+}
+function stepPerson(p, dt){
+  p.t += dt;
+  if(p.st === 'saved' || p.st === 'lost') return;
+  if(p.st === 'beam' || p.st === 'held'){                  // i UFO'ens trækstråle
+    if(!ufo || !ufo.beam){ p.st = 'fly'; p.vx = ufo ? ufo.vx : 0; p.vy = 0; p.vr = (Math.random()-.5)*6; if(!p.hit){ p.hit = true; stats.hit++; } return; }
+    p.x += (ufo.x + (p.ox || 0) - p.x)*Math.min(1, dt*3);
+    if(p.st === 'beam'){ p.y += 7*dt; if(p.y >= ufo.y - 2.5){ p.st = 'held'; } }
+    else p.y = ufo.y - 2.5 + Math.sin(p.t*3)*.3;
+    p.rot = Math.sin(p.t*2)*.4;
+    return;
+  }
+  if(p.st === 'fly'){
+    p.vy -= G*dt; p.rot += p.vr*dt;
+    const nx = p.x + p.vx*dt, ny = p.y + p.vy*dt;
+    if(solidAt(nx, ny + .5, p.z) && p.vy > 0){ p.vy = 0; }
+    if(solidAt(nx, ny + .5, p.z)){ p.vx *= -.3; }
+    else p.x = nx;
+    if(p.vy < 0 && solidAt(p.x, ny - .5, p.z)){ const sf = surfaceAt(p.x, p.z, p.y + 1); p.y = sf > 0 ? sf : Math.max(1, Math.round(ny)); p.st = 'dizzy'; p.t = 0; }
+    else p.y = ny;
+    if(p.y < -10){ p.y = GY; p.st = 'dizzy'; }
+    return;
+  }
+  const b = p.b ? bld[p.b] : null;
+  if((p.st === 'stairs' || p.st === 'exit') && b && b.fallen){ p.st = 'flee'; }
+  if(p.st !== 'stairs' && p.st !== 'exit'){
+    // begravet af brokker eller nedfaldne dele (ikke bygningens egne søjler/vægge)
+    if(buried(p, p.y) || buried(p, p.y + 1)){
+      const sf = surfaceAt(p.x, p.z, p.y + 4); if(sf > 0) p.y = sf; hitPerson(p, 0, 0); return;
+    }
+    // falder
+    if(!solidAt(p.x, Math.round(p.y) - 1, p.z)){
+      if(!p.falling){ p.falling = true; p.fallY = p.y; p.vy = 0; }
+      p.vy -= G*dt;
+      const ny = p.y + p.vy*dt;
+      for(let y = Math.floor(p.y) - 1; y >= Math.floor(ny) - 1; y--){
+        if(solidAt(p.x, y, p.z)){
+          p.y = y + 1; p.falling = false; p.vy = 0;
+          if(p.fallY - p.y > 5){ hitPerson(p, 0, 0); return; }
+          if(p.st === 'walk' || p.st === 'inside') panic(p);
+          return;
+        }
+      }
+      p.y = ny;
+      if(p.y < -10){ p.y = GY; hitPerson(p, 0, 0); }
+      return;
+    }
+    p.falling = false;
+  }
+  if(p.st === 'dizzy') return;
+  const outside = p.z <= SIDE_F + 1 || (p.z >= SIDE_B - 1 && p.z <= SIDE_B + 1);
+  switch(p.st){
+    case 'walk': {
+      p.turnT -= dt;
+      if(p.turnT <= 0){ p.dir = -p.dir; p.turnT = 4 + Math.random()*8; }
+      const zr = p.z < 10 ? [0, SIDE_F + 1] : [SIDE_B - 1, SIDE_B + 1];
+      if(!walkX(p, p.dir, p.sp, dt, zr[0], zr[1]) || p.x < 2 || p.x > WX - 3 || (p.z > 4 && waterAt(p.x + p.dir*2, p.z))){ p.dir = -p.dir; p.x = Math.max(2, Math.min(WX-3, p.x)); }
+      break;
+    }
+    case 'inside': {
+      if(b && b.alarm){ p.st = 'toStairs'; break; }
+      p.turnT -= dt;
+      if(p.turnT <= 0){ p.dir = -p.dir; p.turnT = 2 + Math.random()*5; }
+      if(b){ const nx = p.x + p.dir*p.sp*dt; if(nx < b.x0 + 1.5 || nx > b.x1 - 1.5) p.dir = -p.dir; else p.x = nx; }
+      break;
+    }
+    case 'toStairs': {
+      if(!b){ p.st = 'flee'; break; }
+      const tx = b.x0 + 1, d = tx - p.x;
+      if(Math.abs(d) < .2){ p.x = tx; p.st = 'stairs'; }
+      else p.x += Math.sign(d)*Math.min(Math.abs(d), 3.2*dt);
+      break;
+    }
+    case 'stairs': {
+      if(!b){ p.st = 'flee'; break; }
+      p.y -= 3*dt;
+      if(p.y <= b.y0 + 1){ p.y = b.y0 + 1; p.st = 'exit'; p.zAcc = 0; }
+      break;
+    }
+    case 'exit': {
+      if(!b){ p.st = 'flee'; break; }
+      const tz = b.z0 < SIDE_B ? SIDE_F : SIDE_B;
+      p.zAcc += 4*dt;
+      while(p.zAcc >= 1 && p.z !== tz){ p.zAcc -= 1; p.z += Math.sign(tz - p.z); }
+      if(p.z === tz){
+        // ud på fortovet; står der en lygtepæl lige ved døren, træd et skridt til siden
+        for(const dx of [0, 1, -1, 2, -2]){ const sf = surfaceAt(p.x + dx, p.z, b.y0); if(sf > 0 && sf <= b.y0 + 2 && !buried({x:p.x + dx, z:p.z, b:p.b}, sf)){ p.x += dx; p.y = sf; break; } }
+        p.st = 'flee';
+      }
+      break;
+    }
+    case 'cross': {
+      // fra bagerste til forreste fortov gennem en passage
+      p.zAcc += 4*dt;
+      while(p.zAcc >= 1 && p.z > SIDE_F){
+        p.zAcc -= 1;
+        const s2 = surfaceAt(p.x, p.z - 1, p.y);
+        if(s2 < 0 || s2 > p.y + 2.01){ p.st = 'flee'; p.blockT = 2; break; }
+        p.z--; p.y = Math.max(p.y, s2);
+      }
+      if(p.z <= SIDE_F) p.st = 'flee';
+      break;
+    }
+    case 'flee': {
+      const sp = 4.5 + p.sp;
+      if(p.z > SIDE_F + 1){
+        // bag forreste række: find en passage frem
+        p.blockT = Math.max(0, (p.blockT || 0) - dt);
+        const g = nearestGap(p.x);
+        if(g === null || p.blockT > 0){ walkX(p, p.dir, sp*.5, dt, SIDE_B - 1, SIDE_B + 1) || (p.dir = -p.dir); break; }
+        if(Math.abs(g - p.x) < .3){ p.x = g; p.st = 'cross'; p.zAcc = 0; break; }
+        p.dir = Math.sign(g - p.x);
+        if(!walkX(p, p.dir, sp, dt, SIDE_B - 1, SIDE_B + 1)) p.blockT = 1.5;
+        break;
+      }
+      if(!p.bus || p.bus.st === 'wreck' || p.bus.st === 'fly' || p.t > (p.reT || 0)){ p.bus = pickBus(p); p.reT = p.t + 1.5; }
+      const bu = p.bus;
+      if(!bu){
+        // ingen busser tilbage: løb ud af byen
+        const ex = p.x < WX/2 ? -3 : WX + 3; p.dir = Math.sign(ex - p.x);
+        if(!walkX(p, p.dir, sp, dt, 0, SIDE_F + 1)) p.dir = -p.dir;
+        if(p.x < 0 || p.x > WX - 1){ p.st = 'saved'; stats.saved++; }
+        break;
+      }
+      const tx = (bu.st === 'wait') ? bu.x : bu.home, d = tx - p.x;
+      if(bu.st === 'wait' && bu.load < BUS_CAP && Math.abs(d) < bu.len/2){ p.st = 'saved'; stats.saved++; bu.load++; break; }
+      if(Math.abs(d) > .4){ p.dir = Math.sign(d); if(!walkX(p, p.dir, sp, dt, 0, SIDE_F + 1)){ p.reT = 0; } }
+      break;
+    }
+  }
+}
+
+function stepVehicle(v, dt){
+  if(v.st === 'lost') return;
+  if(v.st === 'beam' || v.st === 'held'){
+    if(!ufo || !ufo.beam){ wreck(v, ufo ? ufo.vx : 0, -1); return; }
+    v.x += (ufo.x + (v.ox || 0) - v.x)*Math.min(1, dt*3);
+    if(v.st === 'beam'){ v.y += 5*dt; if(v.y >= ufo.y - 3.5) v.st = 'held'; } else v.y = ufo.y - 3.5;
+    v.rot = Math.sin(performance.now()/400)*.2;
+    return;
+  }
+  if(v.st === 'away'){ v.t -= dt; if(v.t <= 0){ v.st = 'return'; v.load = 0; } return; }
+  if(v.st === 'fly'){
+    v.vy -= G*dt; v.rot += v.vr*dt; v.x += v.vx*dt;
+    const ny = v.y + v.vy*dt;
+    if(v.vy < 0 && solidAt(v.x, ny - .5, v.z)){ const sf = surfaceAt(v.x, v.z, v.y + 1); v.y = sf > 0 ? sf : ny; v.st = 'wreck'; v.vr = 0; shake(3); noise(.3, 1800, .3, .003); }
+    else v.y = ny;
+    if(v.y < -10){ v.y = GY; v.st = 'wreck'; }
+    return;
+  }
+  if(v.st === 'wreck'){
+    if(!solidAt(v.x, Math.round(v.y) - 1, v.z)) v.y -= 8*dt;
+    if(Math.random() < dt*.9 && parts.length < 2800) parts.push({k:'smoke', z:v.z, x:v.x, y:v.y + 1, vx:(Math.random()-.5), vy:1.5 + Math.random(), life:2, max:2, r:.6});
+    return;
+  }
+  // knust af brokker
+  if(v.x >= 0 && v.x < WX && (solidAt(v.x, v.y, v.z) || solidAt(v.x, v.y + 1, v.z))){ wreck(v, 0, 0); return; }
+  if(v.bus){
+    v.danger = Math.max(0, v.danger - dt);
+    if(v.st === 'wait'){ if(v.load >= BUS_CAP){ v.st = 'leave'; v.dir = v.x < WX/2 ? -1 : 1; toast('En fuld bus kører i sikkerhed'); } return; }
+    let tx = v.st === 'leave' ? v.dir*1e9 : v.home;
+    const d = tx - v.x, dir = Math.sign(d);
+    if(v.st === 'return' && Math.abs(d) < .3){ v.x = v.home; v.st = 'wait'; return; }
+    if(!roadBlocked(v, dir)) v.x += dir*Math.min(Math.abs(d), 15*dt);
+    if(v.st === 'leave' && (v.x < -30 || v.x > WX + 30)){ v.st = 'away'; v.t = 6; v.x = v.dir < 0 ? -30 : WX + 30; }
+    return;
+  }
+  let lim = v.vmax;
+  for(const o of cars){
+    if(o === v || o.z !== v.z || o.st === 'fly') continue;
+    const ahead = (o.x - v.x)*v.dir;
+    if(ahead > 0 && ahead < (v.len + o.len)/2 + 1.5) lim = 0;
+    else if(ahead > 0 && ahead < 12) lim = Math.min(lim, Math.max(0, ahead - 4));
+  }
+  if(roadBlocked(v, v.dir)) lim = 0;
+  v.v += Math.max(-14*dt, Math.min(4*dt, lim - v.v)); if(v.v < 0) v.v = 0;
+  v.x += v.dir*v.v*dt;
+  if(v.x > WX + 25) v.x = -25; else if(v.x < -25) v.x = WX + 25;
+  v.stopT = v.v < .2 ? v.stopT + dt : 0;
+  if(v.stopT > 2.5 && Math.random() < dt*.3){ honk(); v.stopT = 0; }
+}
+function roadBlocked(v, dir){
+  for(let k=1; k<=4; k++){ const xx = v.x + dir*(v.len/2 + k); if(solidAt(xx, v.y, v.z) || solidAt(xx, v.y + 1, v.z)) return true; }
+  return false;
+}
+function honk(){
+  const now = performance.now(); if(now - lastHonk < 900) return; lastHonk = now;
+  tone('square', 420, 410, .22, .05); tone('square', 520, 515, .22, .04);
+}
+// faldende stykker rammer figurer og biler
+function bodyHits(){
+  for(const b of bodies){
+    if(b.zr === undefined){ let a = 99, c = -1; for(let k=0;k<b.n;k++){ if(b.lz[k] < a) a = b.lz[k]; if(b.lz[k] > c) c = b.lz[k]; } b.zr = [a, c]; }
+    const R = Math.hypot(b.halfW, (b.maxY - b.minY)/2 + b.maxY) + 2, cs = Math.cos(b.a), sn = Math.sin(b.a);
+    const inside = (x, y, z) => {
+      if(z < b.zr[0] - .5 || z > b.zr[1] + .5 || Math.abs(x - b.cx) > R || Math.abs(y - b.cy) > R) return false;
+      const dx = x - b.cx, dy = y - b.cy, lx = dx*cs + dy*sn, ly = -dx*sn + dy*cs;
+      return lx > b.minX - .6 && lx < b.maxX + .6 && ly > b.minY - .6 && ly < b.maxY + .6;
+    };
+    for(const p of people) if(p.st !== 'saved' && p.st !== 'fly' && p.st !== 'dizzy' && inside(p.x, p.y + .8, p.z)) hitPerson(p, b.vx + (Math.random()-.5)*6, Math.max(4, -b.vy*.3));
+    for(const v of cars.concat(buses)) if(v.st !== 'away' && v.st !== 'wreck' && v.st !== 'fly' && inside(v.x, v.y + .6, v.z)) wreck(v, b.vx*.5, 4);
+  }
+}
+function stepLife(dt){
+  gapT -= dt; if(gapT <= 0){ gapT = 1.5; findGaps(); }
+  for(const v of buses) stepVehicle(v, dt);
+  for(const v of cars) stepVehicle(v, dt);
+  for(const p of people) stepPerson(p, dt);
+  if(bodies.length) bodyHits();
+  // panik smitter
+  spreadT -= dt;
+  if(spreadT <= 0){
+    spreadT = .3;
+    for(const a of people) if(a.st === 'flee' || a.st === 'cross')
+      for(const q of people) if(q.st === 'walk' && Math.abs(q.x - a.x) < 7 && Math.abs(q.z - a.z) < 4 && Math.random() < .5) panic(q);
+  }
+}
+
+// --- tegning af liv
+function visibleAt(x, y, z, iso){
+  const xi = Math.round(x), yi = Math.round(y);
+  if(!iso){ if(xi < 0 || xi >= WX || yi < 0 || yi >= HY) return true; const f = frontZ[xi + WX*yi]; return f === 255 || f >= z; }
+  for(let t=1; t<=z; t++) if(solidAt(x + t*.5, y + t*.5, z - t)) return false;
+  return true;
+}
+function drawLife(pX, pY, s, iso, t){
+  const vs = cars.concat(buses).filter(v => v.st !== 'away' && v.st !== 'lost').sort((a, b) => b.z - a.z);
+  for(const v of vs){ if(visibleAt(v.x, v.y + .5, v.z, iso)) drawVehicle(v, pX, pY, s, iso, t); }
+  for(const p of people){
+    if(p.st === 'saved' || p.st === 'lost') continue;
+    if(p.st !== 'held' && p.st !== 'beam' && !visibleAt(p.x, p.y + 1, p.z, iso)) continue;
+    drawPerson(p, pX(p.x, p.z), pY(p.y - .5, p.z), s, t);
+  }
+}
+function drawPerson(p, X, Y, s, t){
+  const h = 1.8*s, w = .75*s;
+  if(s < 3){ ctx.fillStyle = p.shirt; ctx.fillRect(X - 1, Y - 3, 2, 3); return; }
+  ctx.save(); ctx.translate(X, Y);
+  if(p.st === 'dizzy'){
+    // ligger ned, stjerner snurrer
+    ctx.fillStyle = '#2d3142'; ctx.fillRect(-h*.5, -w*.55, h*.45, w*.5);
+    ctx.fillStyle = p.shirt; ctx.fillRect(-h*.08, -w*.65, h*.42, w*.65);
+    ctx.fillStyle = p.skin; ctx.beginPath(); ctx.arc(h*.46, -w*.38, w*.42, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffd60a';
+    for(let k=0;k<3;k++){ const a = t*4 + k*2.1; star(h*.46 + Math.cos(a)*w*.9, -w*1.3 + Math.sin(a)*w*.3, w*.28); }
+    ctx.restore(); return;
+  }
+  if(p.st === 'fly' || p.st === 'beam' || p.st === 'held'){ ctx.translate(0, -h*.5); ctx.rotate(p.rot); ctx.translate(0, h*.5); }
+  const run = p.st === 'flee' || p.st === 'cross' || p.st === 'toStairs', moving = p.st !== 'inside' || true;
+  const ph = Math.sin(p.t*(run ? 16 : 8))*(moving ? 1 : 0), dir = p.dir || 1;
+  ctx.fillStyle = '#2d3142';
+  ctx.fillRect(-w*.42 + ph*w*.18, -h*.42, w*.34, h*.42);
+  ctx.fillRect(w*.08 - ph*w*.18, -h*.42, w*.34, h*.42);
+  ctx.fillStyle = p.shirt; ctx.fillRect(-w*.5, -h*.8, w, h*.42);
+  if(run || p.st === 'fly'){ // armene i vejret
+    ctx.strokeStyle = p.skin; ctx.lineWidth = Math.max(1, w*.22); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-w*.45, -h*.75); ctx.lineTo(-w*.8, -h*1.05 - ph*h*.05); ctx.moveTo(w*.45, -h*.75); ctx.lineTo(w*.8, -h*1.05 + ph*h*.05); ctx.stroke();
+  }
+  ctx.fillStyle = p.skin; ctx.beginPath(); ctx.arc(0, -h*.92, w*.42, 0, 7); ctx.fill();
+  if(run){ ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(dir*w*.12, -h*.86, w*.12, 0, 7); ctx.fill(); }   // åben mund
+  ctx.restore();
+}
+function star(x, y, r){
+  ctx.beginPath();
+  for(let k=0;k<10;k++){ const a = k*Math.PI/5 - Math.PI/2, rr = k % 2 ? r*.45 : r; ctx.lineTo(x + Math.cos(a)*rr, y + Math.sin(a)*rr); }
+  ctx.closePath(); ctx.fill();
+}
+function drawVehicle(v, pX, pY, s, iso, t){
+  const L = v.len*s, H = (v.bus ? 2.6 : 1.4)*s, X = pX(v.x, v.z), Y = pY(v.y - .5, v.z);
+  const dead = v.st === 'wreck' || v.st === 'fly' && v.dead;
+  ctx.save(); ctx.translate(X, Y);
+  if(v.st === 'fly' || v.st === 'wreck' || v.st === 'beam' || v.st === 'held') ctx.rotate(-v.rot);
+  if(v.dir < 0) ctx.scale(-1, 1);
+  const col = dead ? '#3b3b3b' : v.col;
+  if(iso){ ctx.fillStyle = dead ? '#2a2a2a' : shadeHex(col, .75); ctx.beginPath(); ctx.moveTo(-L/2, -H); ctx.lineTo(-L/2 + s*.8, -H - s*.8); ctx.lineTo(L/2 + s*.8, -H - s*.8); ctx.lineTo(L/2 + s*.8, -s*.8); ctx.lineTo(L/2, 0); ctx.lineTo(L/2, -H); ctx.fill(); }
+  ctx.fillStyle = col;
+  if(v.bus){
+    ctx.fillRect(-L/2, -H, L, H*.85);
+    ctx.fillStyle = dead ? '#222' : '#bfe3f2';
+    for(let k=0;k<5;k++) ctx.fillRect(-L/2 + s*.5 + k*s*1.25, -H*.9, s*.9, H*.32);
+    ctx.fillRect(L/2 - s*.9, -H*.9, s*.7, H*.6);
+    if(!dead){ ctx.fillStyle = '#1b1f2c'; ctx.font = `700 ${Math.max(8, s*.9)|0}px 'Barlow Condensed', sans-serif`; ctx.textAlign = 'center'; ctx.fillText('BUS', -s*.5, -H*.25); }
+  } else {
+    ctx.fillRect(-L/2, -H*.62, L, H*.5);
+    ctx.beginPath(); ctx.moveTo(-L*.3, -H*.62); ctx.lineTo(-L*.18, -H); ctx.lineTo(L*.2, -H); ctx.lineTo(L*.34, -H*.62); ctx.fill();
+    ctx.fillStyle = dead ? '#222' : '#bfe3f2'; ctx.fillRect(-L*.12, -H*.92, L*.32, H*.26);
+  }
+  ctx.fillStyle = '#151515';
+  for(const wx of v.bus ? [-L*.32, L*.3] : [-L*.3, L*.3]){ ctx.beginPath(); ctx.arc(wx, -s*.12, s*.42, 0, 7); ctx.fill(); }
+  if(!dead && v.bus && v.load){ ctx.fillStyle = '#fff'; ctx.font = `700 ${Math.max(8, s*.8)|0}px 'Barlow Condensed', sans-serif`; ctx.textAlign = 'center'; ctx.fillText(`${v.load}/${BUS_CAP}`, 0, -H - s*.3); }
+  ctx.restore();
+}
+function shadeHex(h, k){ const n = parseInt(h.slice(1), 16); const r = Math.min(255, ((n>>16)&255)*k)|0, g = Math.min(255, ((n>>8)&255)*k)|0, b = Math.min(255, (n&255)*k)|0; return `rgb(${r},${g},${b})`; }
+
+// =====================================================================
+// VISNING – sidevisning (forreste celle pr. x,y), kamera
+// =====================================================================
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const stat = document.createElement('canvas'); stat.width = WX; stat.height = HY;
+const sctx = stat.getContext('2d');
+const img = sctx.createImageData(WX, HY);
+const pix = new Uint32Array(img.data.buffer);
+const frontZ = new Uint8Array(WX*HY).fill(255);
+const colDirty = new Uint8Array(WX); let anyDirty = true;
+const view = {w:800, h:500, dpr:1};
+const cam = {x:0, y:-1, s:8};
+let shakeAmp = 0, skyline = [], clouds = [];
+
+function dirtyCol(x){ colDirty[x] = 1; if(x>0) colDirty[x-1] = 1; if(x<WX-1) colDirty[x+1] = 1; anyDirty = true; isoDirty[x] = 1; isoAny = true; }
+const HAZE = [176,196,214];
+function cellColor(m, id, x, y, z, loose, iso){
+  const b = id ? bld[id] : null;
+  let c = (b && m === b.fm) ? b.col : (b && m === ROOF) ? b.roof : (b && m === GLASS) ? b.glass : MAT[m].col;
+  let r = c[0], g = c[1], bl = c[2];
+  let f = 1 + ((hash3(x,y,z) / 255) - .5) * (loose ? .3 : .12);
+  if(m === GLASS){ const t = Math.min(1, (y - GY) / 60); r += 40*t; g += 34*t; bl += 22*t; if(((x*7 + y*3) % 11) === 0) f += .18; }
+  if(m === EARTH){ f *= 1 - (GY-1-y)*.03; }
+  if(m === WATER){ f = 1 + (((x*13 + z*7) % 9) === 0 ? .25 : 0) + ((hash3(x,y,z)/255) - .5)*.08; }
+  if(b && m !== ROOF && (!iso || y < b.y1)){ const inner = z - b.z0; if(inner > 0 && x > b.x0 && x < b.x1) f *= Math.max(.32, .7 - inner*.04); }
+  if(loose) f *= .86;
+  r *= f; g *= f; bl *= f;
+  const hz = Math.max(0, z - 3) / DZ * (iso ? .1 : .32);
+  r += (HAZE[0]-r)*hz; g += (HAZE[1]-g)*hz; bl += (HAZE[2]-bl)*hz;
+  r = r < 0 ? 0 : r > 255 ? 255 : r|0; g = g < 0 ? 0 : g > 255 ? 255 : g|0; bl = bl < 0 ? 0 : bl > 255 ? 255 : bl|0;
+  return (255<<24 | bl<<16 | g<<8 | r) >>> 0;
+}
+function redrawStatic(){
+  if(!anyDirty) return;
+  anyDirty = false;
+  for(let x=0;x<WX;x++){ if(!colDirty[x]) continue;
+    for(let y=0;y<HY;y++){ let i = x + WX*DZ*y, f = 255;
+      for(let z=0;z<DZ;z++, i+=WX) if(mat[i]){ f = z; break; }
+      frontZ[x + WX*y] = f; }
+  }
+  for(let x=0;x<WX;x++){ if(!colDirty[x]) continue; colDirty[x] = 0;
+    for(let y=0;y<HY;y++){
+      const f = frontZ[x + WX*y], p = x + WX*(HY-1-y);
+      if(f === 255){ pix[p] = 0; continue; }
+      const i = idx(x,y,f), v = mat[i];
+      let c = cellColor(v & MM, bid[i], x, y, f, !!(v & LOOSE));
+      // kanter: lys top, mørk side når naboen ligger dybere
+      let k = 1;
+      if(y < HY-1 && !mat[i+LAYER]) k *= 1.12;
+      const fr = x < WX-1 ? frontZ[x+1 + WX*y] : 255, fl = x > 0 ? frontZ[x-1 + WX*y] : 255;
+      if(fr > f + 1) k *= .84; else if(fl > f + 1) k *= 1.05;
+      if(k !== 1){ const r = Math.min(255, (c & 255)*k), g = Math.min(255, ((c>>8)&255)*k), b = Math.min(255, ((c>>16)&255)*k); c = (255<<24 | b<<16 | g<<8 | r) >>> 0; }
+      pix[p] = c;
+    }
+  }
+  sctx.putImageData(img, 0, 0);
+}
+function bodySprite(b){
+  const x0 = Math.floor(b.minX + .5), x1 = Math.ceil(b.maxX - .5), y0 = Math.floor(b.minY + .5), y1 = Math.ceil(b.maxY - .5);
+  const w = Math.max(1, x1 - x0 + 1), h = Math.max(1, y1 - y0 + 1);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'), im = g.createImageData(w, h), px = new Uint32Array(im.data.buffer), zb = new Uint8Array(w*h).fill(255);
+  for(let k=0;k<b.n;k++){
+    const px_ = Math.round(b.lx[k]) - x0, py = y1 - Math.round(b.ly[k]);
+    if(px_ < 0 || px_ >= w || py < 0 || py >= h) continue;
+    const q = px_ + w*py;
+    if(b.lz[k] < zb[q]){ zb[q] = b.lz[k]; px[q] = cellColor(b.lm[k] & MM, b.lb[k], px_, py, b.lz[k], false); }
+  }
+  g.putImageData(im, 0, 0);
+  return {c, x0, y1, w, h};
+}
+
+// --- 3D-skrå visning: hver celle er en lille terning (front, top, højre side), P px pr. celle, dybde forskyder 2 px op/højre
+const P = 4, ISO_W = WX*P + (DZ-1)*2 + 6, ISO_H = HY*P + DZ*2;
+const isoCv = document.createElement('canvas'); isoCv.width = ISO_W; isoCv.height = ISO_H;
+const isoCtx = isoCv.getContext('2d'), isoImg = isoCtx.createImageData(ISO_W, ISO_H), isoPix = new Uint32Array(isoImg.data.buffer);
+const isoDirty = new Uint8Array(WX).fill(1); let isoAny = true;
+function shadeC(c, k){ const r = Math.min(255, (c & 255)*k), g = Math.min(255, ((c>>8) & 255)*k), b = Math.min(255, ((c>>16) & 255)*k); return (255<<24 | b<<16 | g<<8 | r) >>> 0; }
+function cube(px, W, H, c0, r0, c, front, top, right, pa, pb){
+  if(right){ const cr = shadeC(c, .72); for(let k=1;k<=2;k++){ const col = c0+3+k; if(col<pa || col>=pb) continue; for(let r=r0-k; r<r0-k+4; r++) if(r>=0 && r<H) px[r*W + col] = cr; } }
+  if(top){ const ct = shadeC(c, 1.17); for(let k=1;k<=2;k++){ const r = r0-k; if(r<0) continue; const o = r*W; for(let col=c0+k; col<c0+4+k; col++) if(col>=pa && col<pb) px[o+col] = ct; } }
+  if(front){ for(let r=r0; r<r0+4 && r<H; r++){ const o = r*W; for(let col=c0; col<c0+4; col++) if(col>=pa && col<pb) px[o+col] = c; } }
+}
+function renderIsoSpan(a, b){
+  const pa = a*P, pb = Math.min(ISO_W, b*P + (DZ-1)*2 + 6);
+  for(let r=0; r<ISO_H; r++) isoPix.fill(0, r*ISO_W + pa, r*ISO_W + pb);
+  const xa = Math.max(0, a - 17), xb = Math.min(WX-1, b + 17);
+  for(let z=DZ-1; z>=0; z--) for(let y=0; y<HY; y++){
+    const base = WX*(z + DZ*y), r0 = (HY-1-y)*P + (DZ-z)*2;
+    for(let x=xa; x<=xb; x++){
+      const i = base + x, v = mat[i]; if(!v) continue;
+      const front = z === 0 || !mat[i-WX], top = y === HY-1 || !mat[i+LAYER], right = x === WX-1 || !mat[i+1];
+      if(!front && !top && !right) continue;
+      cube(isoPix, ISO_W, ISO_H, x*P + z*2, r0, cellColor(v & MM, bid[i], x, y, z, !!(v & LOOSE), true), front, top, right, pa, pb);
+    }
+  }
+  isoCtx.putImageData(isoImg, 0, 0, pa, 0, pb - pa, ISO_H);
+}
+function redrawIso(budget){
+  if(!isoAny) return;
+  isoAny = false;
+  let done = 0;
+  for(let x=0; x<WX; x++){
+    if(!isoDirty[x]) continue;
+    let b = x, gap = 0;
+    for(let q=x+1; q<WX && gap<16; q++){ if(isoDirty[q]){ b = q; gap = 0; } else gap++; }
+    if(done > 0 && done + (b-x+1) > budget){ isoAny = true; return; }   // resten tegnes i næste billede
+    isoDirty.fill(0, x, b+1);
+    renderIsoSpan(x, b);
+    done += b - x + 1; x = b;
+  }
+}
+function bodySpriteIso(b){
+  let x0=1e9, x1=-1e9, y0=1e9, y1=-1e9, z0=99, z1=-1;
+  const X = new Int16Array(b.n), Y = new Int16Array(b.n);
+  for(let k=0;k<b.n;k++){ X[k] = Math.round(b.lx[k]); Y[k] = Math.round(b.ly[k]); const z = b.lz[k];
+    if(X[k]<x0) x0=X[k]; if(X[k]>x1) x1=X[k]; if(Y[k]<y0) y0=Y[k]; if(Y[k]>y1) y1=Y[k]; if(z<z0) z0=z; if(z>z1) z1=z; }
+  const nx = x1-x0+1, ny = y1-y0+1, nz = z1-z0+1, occ = new Int32Array(nx*ny*nz);
+  const at = (x,y,z) => (x<0||y<0||z<0||x>=nx||y>=ny||z>=nz) ? 0 : occ[x + nx*(z + nz*y)];
+  for(let k=0;k<b.n;k++) occ[(X[k]-x0) + nx*((b.lz[k]-z0) + nz*(Y[k]-y0))] = k+1;
+  const w = nx*P + (nz-1)*2 + 6, h = ny*P + nz*2;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'), im = g.createImageData(w, h), px = new Uint32Array(im.data.buffer);
+  for(let z=nz-1; z>=0; z--) for(let y=0; y<ny; y++) for(let x=0; x<nx; x++){
+    const k = at(x,y,z); if(!k) continue;
+    const front = !at(x,y,z-1), top = !at(x,y+1,z), right = !at(x+1,y,z);
+    if(!front && !top && !right) continue;
+    cube(px, w, h, x*P + z*2, (ny-1-y)*P + (nz-z)*2, cellColor(b.lm[k-1] & MM, b.lb[k-1], x, y, z+z0, false, true), front, top, right, 0, w);
+  }
+  g.putImageData(im, 0, 0);
+  // ankerpunkt = midten af lokal celle (0,0) i dybden z0, i pixel
+  return {c, w, h, z0, ax: -x0*P + 2, ay: y1*P + (nz-1)*2 + 4};
+}
+
+const sxOf = wx => (wx - cam.x) * cam.s, syOf = wy => view.h - (wy - cam.y) * cam.s;
+function resize(){
+  const r = cv.getBoundingClientRect();
+  view.dpr = Math.min(2, window.devicePixelRatio || 1);
+  view.w = Math.max(200, r.width); view.h = Math.max(150, r.height);
+  cv.width = Math.round(view.w*view.dpr); cv.height = Math.round(view.h*view.dpr);
+  cam.minS = view.h / (HY + 40); cam.maxS = 40;
+  if(!cam.init){ cam.s = Math.max(cam.minS, view.h / (HY - 6)); cam.x = WX/2 - view.w/cam.s/2; cam.init = true; }
+  clampCam();
+}
+function clampCam(){
+  cam.s = Math.max(cam.minS, Math.min(cam.maxS, cam.s));
+  const vw = view.w / cam.s, vh = view.h / cam.s, ext = viewMode === 'iso' ? DZ*.5 : 0, WW = WX + ext, HH = HY + ext;
+  cam.x = vw > WW + 40 ? (WW - vw)/2 : Math.max(-20, Math.min(WW + 20 - vw, cam.x));
+  cam.y = Math.max(-2, Math.min(HH + 20 - vh, cam.y));
+  if(vh > HH + 20) cam.y = -2;
+}
+function genBackdrop(seed){
+  const r = rngOf(seed + '#bg');
+  skyline = []; let x = -100;
+  while(x < WX + 200){ const w = 6 + r()*18; skyline.push([x, w, 14 + r()*50]); x += w + r()*4; }
+  clouds = []; for(let k=0;k<9;k++) clouds.push([r()*(WX+300) - 100, HY + 4 + r()*30, 10 + r()*22]);
+}
+function draw(t){
+  const s = cam.s, W = view.w, H = view.h, iso = viewMode === 'iso';
+  const pX = (x, z) => sxOf(iso ? x + z*.5 : x), pY = (y, z) => syOf(iso ? y + z*.5 : y);
+  const gv = GY + (iso ? DZ*.5 : 0);
+  ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
+  const sh = shakeAmp > .05 ? [(Math.random()-.5)*shakeAmp, (Math.random()-.5)*shakeAmp] : [0,0];
+  // himmel
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#5f9ad1'); g.addColorStop(.75, '#bcd8ea'); g.addColorStop(1, '#dbe9f1');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.translate(sh[0], sh[1]);
+  ctx.fillStyle = 'rgba(255,244,214,.9)'; ctx.beginPath(); ctx.arc(W*.82, H*.16, Math.max(18, s*4), 0, 7); ctx.fill();
+  // skyer og fjern skyline (parallakse)
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  for(const c of clouds){
+    const x = (c[0] + t*.6 - cam.x*.25) % (WX+300) - 100, X = (x - 0) * s*.6, Y = syOf(cam.y + (c[1] - cam.y)*.5);
+    ctx.beginPath(); ctx.ellipse(X, Y, c[2]*s*.6, c[2]*s*.18, 0, 0, 7); ctx.ellipse(X + c[2]*s*.25, Y - c[2]*s*.1, c[2]*s*.35, c[2]*s*.15, 0, 0, 7); ctx.fill();
+  }
+  ctx.fillStyle = '#a9bfd0';
+  for(const b of skyline){ const X = (b[0] - cam.x*.4) * s*.7, w = b[1]*s*.7, h = b[2]*s*.6; ctx.fillRect(X, syOf(gv) - h, w + 1, h); }
+  ctx.fillStyle = '#9db6a0'; ctx.beginPath(); ctx.moveTo(0, H);
+  for(let x=0; x<=W; x+=20){ const wx = x/s*.5 + cam.x*.5; ctx.lineTo(x, syOf(gv) - (6 + Math.sin(wx*.05)*4 + Math.sin(wx*.13)*2)*s*.6); }
+  ctx.lineTo(W, H); ctx.fill();
+  // byen
+  ctx.imageSmoothingEnabled = false;
+  if(iso) ctx.drawImage(isoCv, sxOf(-.5), syOf(HY - .5 + DZ*.5), ISO_W*s/P, ISO_H*s/P);
+  else ctx.drawImage(stat, sxOf(-.5), syOf(HY - .5), WX*s, HY*s);
+  // figurer, biler, busser
+  drawLife(pX, pY, s, iso, t);
+  // faldende stykker (bagerste først)
+  for(const b of (iso ? bodies.slice().sort((p, q) => q.zc - p.zc) : bodies)){
+    ctx.save();
+    if(iso){
+      const sp = b.spriteIso || (b.spriteIso = bodySpriteIso(b));
+      ctx.translate(pX(b.cx, sp.z0), pY(b.cy, sp.z0)); ctx.rotate(-b.a);
+      ctx.drawImage(sp.c, -sp.ax*s/P, -sp.ay*s/P, sp.w*s/P, sp.h*s/P);
+    } else {
+      ctx.translate(sxOf(b.cx), syOf(b.cy)); ctx.rotate(-b.a);
+      const sp = b.sprite; ctx.drawImage(sp.c, (sp.x0 - .5)*s, -(sp.y1 + .5)*s, sp.w*s, sp.h*s);
+    }
+    ctx.restore();
+  }
+  // projektiler
+  for(const p of shots){
+    const X = pX(p.x, p.z), Y = pY(p.y, p.z);
+    ctx.save(); ctx.translate(X, Y);
+    if(p.kind === 'meteor'){ const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, s*3.2); gr.addColorStop(0, 'rgba(255,240,180,1)'); gr.addColorStop(.35, 'rgba(255,140,40,.9)'); gr.addColorStop(1, 'rgba(255,80,0,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, s*3.2, 0, 7); ctx.fill(); ctx.fillStyle = '#3a2a22'; ctx.beginPath(); ctx.arc(0, 0, s*1.3, 0, 7); ctx.fill(); }
+    else if(p.kind === 'raket'){ ctx.rotate(Math.atan2(-p.vy, p.vx)); ctx.fillStyle = '#e8e2d6'; ctx.fillRect(-s*1.6, -s*.35, s*2.4, s*.7); ctx.fillStyle = '#d33'; ctx.fillRect(s*.6, -s*.35, s*.5, s*.7);
+      ctx.fillStyle = 'rgba(255,190,80,.9)'; ctx.beginPath(); ctx.moveTo(-s*1.6, -s*.3); ctx.lineTo(-s*(2.4 + Math.random()), 0); ctx.lineTo(-s*1.6, s*.3); ctx.fill(); }
+    else { const r = (p.kind === 'mega' ? 1.6 : 1) * s; ctx.fillStyle = '#2a2f36'; ctx.beginPath(); ctx.ellipse(0, 0, r*.8, r*1.2, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#545c66'; ctx.fillRect(-r*.7, -r*1.9, r*1.4, r*.6); }
+    ctx.restore();
+  }
+  drawNature(pX, pY, s, iso, t);
+  drawScifi(pX, pY, s, iso, t);
+  drawMonsters(pX, pY, s, iso, t);
+  drawMissionTarget(pX, pY, s, t);
+  // C4-ladninger (blinker hurtigt, når de er udløst)
+  for(const c of charges){
+    const X = pX(c.x, c.z - .5), Y = pY(c.y, c.z - .5), w = Math.max(11, s*1.5), h = Math.max(7, s*.95);
+    ctx.fillStyle = '#3d4a2c'; ctx.fillRect(X - w/2, Y - h/2, w, h);
+    ctx.fillStyle = '#c9b98a'; ctx.fillRect(X - w/2 + w*.12, Y - h*.25, w*.5, h*.5);
+    const on = c.armed ? (t*12 % 1) < .5 : (t*2 % 1) < .5;
+    ctx.fillStyle = on ? '#ff3b30' : '#5a1512'; ctx.beginPath(); ctx.arc(X + w*.3, Y, Math.max(1.5, h*.18), 0, 7); ctx.fill();
+  }
+  // boremaskinens sigte
+  if(drill.on){
+    const r = Math.max(10, s*1.6);
+    ctx.save(); ctx.translate(drill.sx, drill.sy); ctx.rotate(t*25);
+    ctx.strokeStyle = drill.hit ? '#ffcf5a' : 'rgba(255,255,255,.7)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+    for(let k=0;k<4;k++){ ctx.rotate(Math.PI/2); ctx.beginPath(); ctx.moveTo(r*.35, 0); ctx.lineTo(r*.95, 0); ctx.stroke(); }
+    ctx.restore();
+  }
+  if(flash > 0){ ctx.fillStyle = `rgba(235,240,255,${(flash*1.6).toFixed(3)})`; ctx.fillRect(-20, -20, W + 40, H + 40); }
+  // partikler
+  for(const p of parts){
+    const pz = p.z === undefined ? 9 : p.z, X = pX(p.x, pz), Y = pY(p.y, pz), a = p.life / p.max;
+    if(p.k === 'deb'){ ctx.save(); ctx.translate(X, Y); ctx.rotate(p.rot); ctx.fillStyle = p.col; ctx.fillRect(-p.s*s/2, -p.s*s/2, p.s*s, p.s*s); ctx.restore(); }
+    else if(p.k === 'dust'){ ctx.fillStyle = `rgba(150,140,128,${(a*.5).toFixed(3)})`; ctx.beginPath(); ctx.arc(X, Y, p.r*s, 0, 7); ctx.fill(); }
+    else if(p.k === 'smoke'){ ctx.fillStyle = `rgba(200,200,200,${(a*.5).toFixed(3)})`; ctx.beginPath(); ctx.arc(X, Y, p.r*s, 0, 7); ctx.fill(); }
+    else if(p.k === 'fire'){ ctx.fillStyle = `rgba(255,${(140 + 100*a)|0},${(40*a)|0},${(a*.9).toFixed(3)})`; ctx.beginPath(); ctx.arc(X, Y, p.r*s*(1.4 - a*.4), 0, 7); ctx.fill(); }
+    else if(p.k === 'flash'){ const gr = ctx.createRadialGradient(X, Y, 0, X, Y, p.r*s); gr.addColorStop(0, `rgba(255,250,220,${a})`); gr.addColorStop(1, 'rgba(255,200,120,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, p.r*s, 0, 7); ctx.fill(); }
+    else if(p.k === 'suck' || p.k === 'beamup'){ ctx.fillStyle = p.col; ctx.fillRect(X - s*.3, Y - s*.3, s*.6, s*.6); }
+    else if(p.k === 'flame'){ ctx.fillStyle = `rgba(255,${(120 + 120*a)|0},${(30*a)|0},${(a*.9).toFixed(3)})`; ctx.beginPath(); ctx.arc(X, Y, Math.max(1.5, p.r*s), 0, 7); ctx.fill(); }
+    else if(p.k === 'spark'){ ctx.strokeStyle = `rgba(255,${(200 + 55*a)|0},120,${a.toFixed(3)})`; ctx.lineWidth = Math.max(1, s*.18); ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X - p.vx*s*.03, Y + p.vy*s*.03); ctx.stroke(); }
+    else if(p.k === 'ring'){ ctx.strokeStyle = `rgba(255,255,255,${(a*.6).toFixed(3)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, p.r*s*(2.6 - a*1.6), 0, 7); ctx.stroke(); }
+  }
+}
+
+// =====================================================================
+// SKAL – input, knapper, lyd, løkke
+// =====================================================================
+let tool = 'raket', paused = false, slow = false, seed = '';
+let viewMode = 'side';
+try { if(localStorage.getItem('kkd-view') === 'iso') viewMode = 'iso'; } catch(_) {}
+const $ = id => document.getElementById(id);
+const toastEl = $('toast'); let toastT = 0;
+function toast(text){ toastEl.textContent = text; toastEl.classList.remove('off'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.add('off'), 2200); }
+function shake(a){ shakeAmp = Math.max(shakeAmp, a); }
+
+let cat = 'eks';
+function setCat(c){
+  cat = c;
+  for(const b of document.querySelectorAll('.cat')) b.setAttribute('aria-pressed', String(b.dataset.cat === c));
+  let first = null, has = false;
+  let n = 0;
+  for(const b of document.querySelectorAll('.tool')){ const on = b.dataset.cat === c; b.hidden = !on; if(on){ n++; const k = b.querySelector ? b.querySelector('kbd') : null; if(k) k.textContent = String(n); } if(on && !first) first = b.dataset.tool; if(on && b.dataset.tool === tool) has = true; }
+  if(!has && first) setTool(first);
+}
+for(const b of document.querySelectorAll('.cat')) b.addEventListener('click', () => setCat(b.dataset.cat));
+const HOLD = {bor:1, laser:1, ufo:1, gorilla:1, kaiju:1, tentakel:1};
+function worldAt(sx, sy){ const u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s; return viewMode === 'iso' ? {x: u - 4.5, y: v - 4.5} : {x: u, y: v}; }
+function holdStart(sx, sy){
+  if(mission && (mission.result || !(mission.uses[tool] > 0))){ if(mission.uses[tool] !== undefined && !mission.result) toast('Ikke mere tid tilbage til dette våben'); return; }
+  if(tool === 'bor'){ drill.on = true; drill.sx = sx; drill.sy = sy; drill.acc = .05; }
+  else if(tool === 'laser'){ laser.on = true; laser.sx = sx; laser.sy = sy; laser.acc = 1/40; }
+  else if(tool === 'ufo') ufoSteer(sx, sy);
+  else if(MON_TOOLS[tool]){ const w = worldAt(sx, sy); act(tool, null, w); }
+}
+const MON_TOOLS = {gorilla:1, kaiju:1, tentakel:1};
+function holdMove(sx, sy){
+  if(MON_TOOLS[tool]){ const w = worldAt(sx, sy); const m = monsterOf(tool); if(m) steerMonster(tool, w.x, w.y); return; }
+  if(tool === 'bor'){ drill.sx = sx; drill.sy = sy; }
+  else if(tool === 'laser'){ laser.sx = sx; laser.sy = sy; }
+  else if(tool === 'ufo') ufoSteer(sx, sy);
+}
+function holdEnd(){ drill.on = false; laser.on = false; }
+function holdAt(t, h, secs){
+  let used = 0;
+  for(let k=0; k*.05 < secs; k++){
+    if(!spendTime(t, .05)) break;
+    if(t === 'bor') drillTick(typeof h === 'function' ? h(k) : h); else laserTick(typeof h === 'function' ? h(k) : h);
+    step(1/60); step(1/60); step(1/60); used += .05;
+  }
+  return used;
+}
+function setTool(t){ holdEnd(); tool = t; $('bBeam').hidden = !(t === 'ufo' && ufo); for(const b of document.querySelectorAll('.tool')) b.setAttribute('aria-pressed', String(b.dataset.tool === t)); }
+for(const b of document.querySelectorAll('.tool')) b.addEventListener('click', () => setTool(b.dataset.tool));
+function setPause(v){ paused = v; $('bPause').setAttribute('aria-pressed', String(v)); }
+function setSlow(v){ slow = v; $('bSlow').setAttribute('aria-pressed', String(v)); $('slowTag').hidden = !v; }
+$('bPause').addEventListener('click', () => setPause(!paused));
+function setView(v){
+  if(v === viewMode && $('bView').getAttribute('aria-pressed') === String(v === 'iso')) return;
+  const mid = cam.x + view.w/cam.s/2 + (v === 'iso' ? DZ*.25 : -DZ*.25) * (v === viewMode ? 0 : 1);
+  viewMode = v;
+  $('bView').setAttribute('aria-pressed', String(v === 'iso'));
+  $('bViewLbl').textContent = v === 'iso' ? 'Side' : '3D';
+  try { localStorage.setItem('kkd-view', v); } catch(_) {}
+  cam.x = mid - view.w/cam.s/2; clampCam();
+}
+$('bView').addEventListener('click', () => setView(viewMode === 'iso' ? 'side' : 'iso'));
+$('bSlow').addEventListener('click', () => setSlow(!slow));
+$('bReset').addEventListener('click', () => mission ? startMission(mission.def.id) : start(seed));
+$('bNew').addEventListener('click', () => { exitMission(); start(randomSeed()); });
+$('bMis').addEventListener('click', () => showMis(true));
+$('bDes').addEventListener('click', openDesigner);
+$('desClose').addEventListener('click', () => { $('desPanel').hidden = true; });
+{ const gc = $('desGrid');
+  gc.addEventListener('pointerdown', e => { desPaint = true; gc.setPointerCapture && gc.setPointerCapture(e.pointerId); desPaintAt(e); });
+  gc.addEventListener('pointermove', e => { if(desPaint) desPaintAt(e); });
+  for(const ev of ['pointerup', 'pointercancel']) gc.addEventListener(ev, () => { desPaint = false; }); }
+for(const b of document.querySelectorAll('#desPal button')) b.addEventListener('click', () => { desMat = b.dataset.m; for(const o of document.querySelectorAll('#desPal button')) o.setAttribute('aria-pressed', String(o === b)); });
+for(const b of document.querySelectorAll('.desRow button')) b.addEventListener('click', () => {
+  const k = b.dataset.d, v = +b.dataset.v, lim = {W:[4, 22], D:[3, 12], H:[3, 45]}[k];
+  const nv = Math.max(lim[0], Math.min(lim[1], des[k] + v));
+  resizeDesign(des, k === 'W' ? nv : des.W, k === 'D' ? nv : des.D, k === 'H' ? nv : des.H); syncDesigner(); });
+$('desWall').addEventListener('change', () => { des.wall = $('desWall').value; syncDesigner(); });
+$('desRoof').addEventListener('change', () => { des.roof = $('desRoof').value; syncDesigner(); });
+$('desFloors').addEventListener('change', () => { des.floors = $('desFloors').checked; syncDesigner(); });
+$('desName').addEventListener('keydown', e => e.stopPropagation());
+$('desFill').addEventListener('click', () => { des.grid = 'w'.repeat(des.W*des.H); syncDesigner(); });
+$('desWin').addEventListener('click', () => { des.grid = autoWindows(des.W, des.H); syncDesigner(); });
+$('desCopy').addEventListener('click', () => { const base = des.grid.slice(0, des.W*4); let g = ''; for(let y=0; y<des.H; y++) g += base.slice((y % 4)*des.W, (y % 4)*des.W + des.W); des.grid = g; syncDesigner(); });
+$('desSave').addEventListener('click', desSave);
+$('desNew').addEventListener('click', () => { des = newDesign(); desIdx = -1; syncDesigner(); });
+$('desDel').addEventListener('click', () => { const list = loadDesigns(); if(desIdx >= 0 && desIdx < list.length){ list.splice(desIdx, 1); saveDesigns(list); } des = list.length ? JSON.parse(JSON.stringify(list[0])) : newDesign(); desIdx = list.length ? 0 : -1; syncDesigner(); });
+$('desMix').addEventListener('change', () => { try { localStorage.setItem('kkd-mix', $('desMix').checked ? '1' : '0'); } catch(_) {} toast($('desMix').checked ? 'Dine bygninger blandes ind i nye byer' : 'Nye byer bruger kun standardhuse'); });
+$('desPlace').addEventListener('click', () => { desSave(); placing = JSON.parse(JSON.stringify(des)); $('desPanel').hidden = true; toast('Tryk i byen, hvor huset skal stå'); });
+$('misClose').addEventListener('click', () => showMis(false));
+$('misPanel').addEventListener('click', e => { if(e.target.id === 'misPanel') showMis(false); });
+$('mQuit').addEventListener('click', () => { exitMission(); start(randomSeed()); });
+$('resNext').addEventListener('click', e => startMission(e.currentTarget.dataset.id));
+$('resAgain').addEventListener('click', () => startMission(mission.def.id));
+$('resList').addEventListener('click', () => { $('resPanel').hidden = true; showMis(true); });
+$('resFree').addEventListener('click', () => { exitMission(); start(randomSeed()); });
+$('bDet').addEventListener('click', () => { audioInit(); detonate(); });
+{ const bb = $('bBeam');
+  bb.addEventListener('pointerdown', e => { e.preventDefault(); audioInit(); bb.setPointerCapture && bb.setPointerCapture(e.pointerId); setBeam(true); });
+  for(const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) bb.addEventListener(ev, () => setBeam(false)); }
+$('bTop').addEventListener('click', () => showTop(true));
+$('topClose').addEventListener('click', () => showTop(false));
+$('topPanel').addEventListener('click', e => { if(e.target.id === 'topPanel') showTop(false); });
+$('bSound').addEventListener('click', () => setMuted(!muted));
+
+// --- Top 10 pr. by (frø), gemt på enheden
+let session = null, bestBefore = 0, recordShown = false, lastSave = 0;
+const fmtKr = d => d >= 1e6 ? (d/1e6).toLocaleString('da-DK', {maximumFractionDigits:1}) + ' mio. kr.' : Math.round(d).toLocaleString('da-DK') + ' kr.';
+function loadTop(){ try { return JSON.parse(localStorage.getItem('kkd-top') || '{}') || {}; } catch(_) { return {}; } }
+function saveTop(){
+  if(!session || stats.damage <= 0) return;
+  const all = loadTop(), list = all[session.seed] || [];
+  const e = list.find(x => x.id === session.id);
+  if(e){ e.kr = Math.round(stats.damage); e.fald = stats.fallen; e.red = stats.saved; e.tot = stats.people; }
+  else list.push({id:session.id, kr:Math.round(stats.damage), fald:stats.fallen, red:stats.saved, tot:stats.people, dato:new Date().toISOString().slice(0,10)});
+  list.sort((a, b) => b.kr - a.kr);
+  all[session.seed] = list.slice(0, 10);
+  try { localStorage.setItem('kkd-top', JSON.stringify(all)); } catch(_) {}
+}
+function showTop(on){
+  const el = $('topPanel');
+  if(!on){ el.hidden = true; return; }
+  saveTop();
+  const list = loadTop()[theme + ':' + seed] || [];
+  $('topSeed').textContent = `${THEMES[theme].name} · frø: ${seed}`;
+  const ol = $('topList'); ol.innerHTML = '';
+  if(!list.length){ const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'Ingen resultater endnu – smadr løs!'; ol.appendChild(li); }
+  list.forEach((e, k) => {
+    const li = document.createElement('li'); if(session && e.id === session.id) li.className = 'me';
+    li.innerHTML = `<span class="r">${k+1}.</span><span class="k">${fmtKr(e.kr)}</span><small>${e.fald} faldne · ${e.tot ? e.red + '/' + e.tot + ' reddet · ' : ''}${e.dato.split('-').reverse().join('.')}</small>`;
+    ol.appendChild(li);
+  });
+  el.hidden = false;
+}
+window.addEventListener('pagehide', saveTop);
+document.addEventListener('visibilitychange', () => { if(document.hidden) saveTop(); });
+const seedIn = $('seedIn'), themeSel = $('themeSel');
+try { const tm = localStorage.getItem('kkd-tema'); if(THEMES[tm]) theme = tm; } catch(_) {}
+themeSel.value = theme;
+themeSel.addEventListener('change', () => { exitMission(); theme = themeSel.value; try { localStorage.setItem('kkd-tema', theme); } catch(_) {} start(seed); themeSel.blur(); });
+seedIn.addEventListener('keydown', e => { e.stopPropagation(); if(e.key === 'Enter'){ const v = seedIn.value.trim(); if(v){ exitMission(); start(v); } seedIn.blur(); } });
+
+function start(sd){
+  saveTop();
+  seed = sd; seedIn.value = sd;
+  session = {id: Date.now() + Math.random(), seed: theme + ':' + sd};
+  bestBefore = ((loadTop()[session.seed] || [])[0] || {kr:0}).kr; recordShown = false;
+  resetNature(); resetScifi(); resetMonsters();
+  charges = []; timers = []; drill.on = false; glassBroken = 0;
+  genCity(sd, theme, startingMission ? null : (mixOn() ? loadDesigns() : null)); genBackdrop(sd);
+  bodies = []; parts = []; shots = []; seeds = []; active = []; inAct.fill(0);
+  stats.damage = 0; stats.fallen = 0;
+  genLife(sd);
+  colDirty.fill(1); anyDirty = true; isoDirty.fill(1); isoAny = true;
+  if(viewMode === 'iso') redrawIso(WX); else redrawStatic();
+  hud(true);
+}
+let lastHud = '';
+function hud(force){
+  const d = stats.damage, txt = fmtKr(d), best = Math.max(bestBefore, d);
+  const f = `${stats.fallen} / ${bld.filter(b => b && !b.gone).length}`, bt = best > 0 ? fmtKr(best) : '–';
+  const sv = `${stats.saved} / ${stats.people}`, ht = String(stats.hit);
+  if(force || txt + f + bt + sv + ht !== lastHud){ $('hDmg').textContent = txt; $('hFall').textContent = f; $('hBest').textContent = bt; $('hSaved').textContent = sv; $('hHit').textContent = ht; lastHud = txt + f + bt + sv + ht; }
+  if(bestBefore > 0 && !recordShown && d > bestBefore){ recordShown = true; toast('Ny rekord for denne by!'); }
+  const now = performance.now(); if(d > 0 && now - lastSave > 4000){ lastSave = now; saveTop(); }
+  const n = charges.length, det = $('bDet');
+  if(det.hidden !== (n === 0)) det.hidden = n === 0;
+  if(n) $('detN').textContent = String(n);
+  hudMission();
+}
+
+// pointer: tryk = affyr, træk = flyt kamera, to fingre = zoom
+const ptrs = new Map(); let gesture = null;
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('pointerdown', e => {
+  audioInit();
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, {x:e.offsetX, y:e.offsetY, sx:e.offsetX, sy:e.offsetY, t:performance.now(), btn:e.button});
+  if(ptrs.size === 2){ holdEnd(); const [a,b] = [...ptrs.values()]; gesture = {multi:true, d:Math.hypot(a.x-b.x, a.y-b.y), mx:(a.x+b.x)/2, my:(a.y+b.y)/2}; }
+  else if(ptrs.size === 1){
+    gesture = {multi:false, moved:false, hold: !!HOLD[tool] && e.button === 0};
+    if(gesture.hold){ holdStart(e.offsetX, e.offsetY); $('bBeam').hidden = !(tool === 'ufo' && ufo); }
+  }
+});
+cv.addEventListener('pointermove', e => {
+  const p = ptrs.get(e.pointerId); if(!p) return;
+  const dx = e.offsetX - p.x, dy = e.offsetY - p.y;
+  p.x = e.offsetX; p.y = e.offsetY;
+  if(!gesture) return;
+  if(gesture.multi && ptrs.size >= 2){
+    const [a,b] = [...ptrs.values()];
+    const d = Math.hypot(a.x-b.x, a.y-b.y), mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+    zoomAt(mx, my, d / (gesture.d || d));
+    cam.x -= (mx - gesture.mx)/cam.s; cam.y += (my - gesture.my)/cam.s; clampCam();
+    gesture.d = d; gesture.mx = mx; gesture.my = my;
+  } else if(!gesture.multi && gesture.hold){
+    holdMove(p.x, p.y);
+  } else if(!gesture.multi){
+    if(!gesture.moved && Math.hypot(p.x - p.sx, p.y - p.sy) > 9) gesture.moved = true;
+    if(gesture.moved){ cam.x -= dx/cam.s; cam.y += dy/cam.s; clampCam(); }
+  }
+});
+function endPtr(e){
+  const p = ptrs.get(e.pointerId); if(!p) return;
+  ptrs.delete(e.pointerId);
+  if(gesture && !gesture.multi && !gesture.moved && p.btn === 0 && e.type === 'pointerup'){
+    fireScreen(p.x, p.y);
+  }
+  if(ptrs.size === 0){ gesture = null; holdEnd(); }
+}
+cv.addEventListener('pointerup', endPtr);
+cv.addEventListener('pointercancel', endPtr);
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * .0015)); }, {passive:false});
+function zoomAt(sx, sy, f){
+  const wx = cam.x + sx/cam.s, wy = cam.y + (view.h - sy)/cam.s;
+  cam.s *= f; clampCam();
+  cam.x = wx - sx/cam.s; cam.y = wy - (view.h - sy)/cam.s; clampCam();
+}
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if($('topPanel').hidden === false && k === 'escape'){ showTop(false); return; }
+  if($('misPanel').hidden === false && k === 'escape'){ showMis(false); return; }
+  if($('desPanel').hidden === false){ if(k === 'escape') $('desPanel').hidden = true; return; }
+  if(k >= '1' && k <= '9'){ const vis = [...document.querySelectorAll('.tool')].filter(b => !b.hidden); const b = vis[+k - 1]; if(b) setTool(b.dataset.tool); }
+  else if(k === 'd'){ audioInit(); detonate(); }
+  else if(k === 'b' && ufo){ setBeam(!ufo.beam); }
+  else if(k === 't') showTop($('topPanel').hidden);
+  else if(k === 'm') setMuted(!muted);
+  else if(k === ' '){ e.preventDefault(); setPause(!paused); }
+  else if(k === 's') setSlow(!slow);
+  else if(k === 'v') setView(viewMode === 'iso' ? 'side' : 'iso');
+  else if(k === 'r') (mission ? startMission(mission.def.id) : start(seed));
+  else if(k === 'n'){ exitMission(); start(randomSeed()); }
+  else if(k === 'o') showMis($('misPanel').hidden);
+  else if(k === 'h') openDesigner();
+  else if(k === 'arrowleft'){ cam.x -= 40/cam.s*4; clampCam(); }
+  else if(k === 'arrowright'){ cam.x += 40/cam.s*4; clampCam(); }
+  else if(k === '+' || k === '='){ zoomAt(view.w/2, view.h/2, 1.2); }
+  else if(k === '-'){ zoomAt(view.w/2, view.h/2, 1/1.2); }
+});
+window.addEventListener('resize', resize);
+
+// --- lyd: Web Audio-syntese, ingen filer. master -> kompressor/limiter; brag går gennem en forvrænger (SAT),
+// så de kan høres i små højttalere; basdrønet går udenom
+let AC = null, master = null, sat = null, noiseBuf = null, lastRumble = 0, lastTinkle = 0, drillNode = null;
+let muted = false;
+try { muted = localStorage.getItem('kkd-lyd') === 'fra'; } catch(_) {}
+function setMuted(v){
+  muted = v;
+  $('bSound').setAttribute('aria-pressed', String(v));
+  $('sndWave').toggleAttribute('hidden', v); $('sndOff').toggleAttribute('hidden', !v);
+  try { localStorage.setItem('kkd-lyd', v ? 'fra' : 'til'); } catch(_) {}
+  if(master) master.gain.setTargetAtTime(v ? 0 : .85, AC.currentTime, .03);
+}
+function audioInit(){
+  if(AC) { if(AC.state === 'suspended') AC.resume(); return; }
+  const C = window.AudioContext || window.webkitAudioContext; if(!C) return;
+  AC = new C();
+  const comp = AC.createDynamicsCompressor();
+  comp.threshold.value = -14; comp.knee.value = 6; comp.ratio.value = 12; comp.attack.value = .003; comp.release.value = .25;
+  master = AC.createGain(); master.gain.value = muted ? 0 : .85; master.connect(comp); comp.connect(AC.destination);
+  sat = AC.createWaveShaper();
+  const curve = new Float32Array(1024); for(let k=0;k<1024;k++){ const x = k/511.5 - 1; curve[k] = Math.tanh(3*x) / Math.tanh(3); }
+  sat.curve = curve; const sg = AC.createGain(); sg.gain.value = .7; sat.connect(sg); sg.connect(master);
+  noiseBuf = AC.createBuffer(1, AC.sampleRate*2, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0); for(let k=0;k<d.length;k++) d[k] = Math.random()*2 - 1;
+}
+function noise(dur, freq, vol, attack, dest, type, when){
+  if(!AC) return;
+  const t = AC.currentTime + (when || 0), src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  src.buffer = noiseBuf; f.type = type || 'lowpass'; f.frequency.setValueAtTime(freq, t);
+  if(!type || type === 'lowpass') f.frequency.exponentialRampToValueAtTime(Math.max(40, freq*.15), t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + (attack || .01)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f); f.connect(g); g.connect(dest || master); src.start(t, Math.random()*1.5); src.stop(t + dur + .05);
+}
+function tone(type, f0, f1, dur, vol, when, dest){
+  if(!AC) return;
+  const t = AC.currentTime + (when || 0), o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); if(f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .005); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(dest || master); o.start(t); o.stop(t + dur + .05);
+}
+function boom(size){
+  if(!AC) return;
+  noise(.6 + size*1.6, 900 + size*700, .9, .008, sat);          // braget (forvrænget)
+  noise(.12, 3500, .35, .002, master, 'highpass');              // knaldet
+  tone('sine', 95, 26, .6 + size, .9);                          // basdrøn, uden om SAT
+}
+function tinkle(v){
+  if(!AC) return;
+  const now = performance.now(); if(now - lastTinkle < 120) return; lastTinkle = now;
+  const n = 3 + Math.round(v*9);
+  for(let k=0;k<n;k++) tone('triangle', 2600 + Math.random()*4200, 2400 + Math.random()*3000, .08 + Math.random()*.18, .04 + v*.05, Math.random()*.3);
+  noise(.25, 5000, .05 + v*.1, .004, master, 'highpass');
+}
+let laserNode = null, beamNode = null;
+function loopTone(node, on, mk){
+  if(!AC) return node;
+  if(on && !node) node = mk();
+  else if(!on && node){ const n = node; n.g.gain.setTargetAtTime(0.0001, AC.currentTime, .05); setTimeout(() => { try { n.o.forEach(o => o.stop()); } catch(_) {} }, 400); node = null; }
+  return node;
+}
+function laserSound(on){
+  laserNode = loopTone(laserNode, on, () => {
+    const o = AC.createOscillator(), o2 = AC.createOscillator(), g = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain();
+    o.type = 'sawtooth'; o.frequency.value = 220; o2.type = 'square'; o2.frequency.value = 331; lfo.frequency.value = 9; lg.gain.value = 40;
+    lfo.connect(lg); lg.connect(o.frequency); g.gain.value = 0.0001; o.connect(g); o2.connect(g); g.connect(sat);
+    o.start(); o2.start(); lfo.start(); g.gain.setTargetAtTime(.1, AC.currentTime, .05);
+    return {g, o:[o, o2, lfo]};
+  });
+}
+function beamSound(on){
+  beamNode = loopTone(beamNode, on, () => {
+    const o = AC.createOscillator(), g = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain();
+    o.type = 'sine'; o.frequency.value = 160; lfo.frequency.value = 5; lg.gain.value = 60; lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.value = 0.0001; o.connect(g); g.connect(master); o.start(); lfo.start(); g.gain.setTargetAtTime(.12, AC.currentTime, .1);
+    return {g, o:[o, lfo]};
+  });
+}
+let windNode = null;
+function windSound(on){
+  if(!AC) return;
+  const t = AC.currentTime;
+  if(on && !windNode){
+    const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain();
+    src.buffer = noiseBuf; src.loop = true; f.type = 'bandpass'; f.frequency.value = 420; f.Q.value = 1.2;
+    lfo.frequency.value = .35; lg.gain.value = 220; lfo.connect(lg); lg.connect(f.frequency);
+    g.gain.value = 0.0001; src.connect(f); f.connect(g); g.connect(sat); src.start(); lfo.start();
+    g.gain.setTargetAtTime(.35, t, .4);
+    windNode = {src, g, lfo};
+  } else if(!on && windNode){
+    const w = windNode; windNode = null; w.g.gain.setTargetAtTime(0.0001, t, .4);
+    setTimeout(() => { try { w.src.stop(); w.lfo.stop(); } catch(_) {} }, 1500);
+  }
+}
+function beep(f){ tone('square', f, f, .09, .12); }
+function clickSnd(){ noise(.05, 2500, .25, .002, master, 'bandpass'); tone('square', 900, 900, .04, .06); }
+function drillSound(on, load){
+  if(!AC) return;
+  const t = AC.currentTime;
+  if(on && !drillNode){
+    const o = AC.createOscillator(), o2 = AC.createOscillator(), f = AC.createBiquadFilter(), g = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain();
+    o.type = 'sawtooth'; o2.type = 'square'; o.frequency.value = 95; o2.frequency.value = 191;
+    f.type = 'bandpass'; f.frequency.value = 1100; f.Q.value = .8;
+    lfo.type = 'square'; lfo.frequency.value = 28; lg.gain.value = .35;
+    g.gain.value = 0.0001;
+    o.connect(f); o2.connect(f); f.connect(g); g.connect(sat); lfo.connect(lg); lg.connect(g.gain);
+    o.start(); o2.start(); lfo.start();
+    drillNode = {o, o2, g, f};
+  }
+  if(!drillNode) return;
+  if(on){
+    drillNode.g.gain.setTargetAtTime(.12 + load*.12, t, .04);
+    drillNode.o.frequency.setTargetAtTime(95 - load*30, t, .05); drillNode.o2.frequency.setTargetAtTime(191 - load*55, t, .05);
+    drillNode.f.frequency.setTargetAtTime(1100 + load*900, t, .05);
+  } else {
+    const d = drillNode; drillNode = null;
+    d.g.gain.setTargetAtTime(0.0001, t, .05);
+    setTimeout(() => { try { d.o.stop(); d.o2.stop(); } catch(_) {} }, 400);
+  }
+}
+function rumble(v){
+  if(!AC || v < .05) return;
+  const now = performance.now(); if(now - lastRumble < 160) return; lastRumble = now;
+  noise(1 + v*2.5, 260, .25 + v*.5, .15);
+}
+function whoosh(kind){ if(AC) noise(kind === 'raket' ? .5 : .9, 2400, .12, .2); }
+
+// --- løkke
+let last = performance.now(), acc = 0, caAcc = 0;
+const DT = 1/60;
+function step(dt){
+  stepTimers(dt);
+  stepShots(dt);
+  stepDrill(dt);
+  stepCharges();
+  for(let k=bodies.length-1; k>=0; k--){
+    const b = bodies[k];
+    const sub = Math.max(1, Math.min(6, Math.ceil((Math.abs(b.vy) + Math.abs(b.vx) + Math.abs(b.w)*b.halfW) * dt / .45)));
+    for(let q=0; q<sub && bodies.includes(b); q++) stepBody(b, dt/sub);
+  }
+  caAcc += dt*60;
+  while(caAcc >= 1){ caStep(); caAcc -= 1; }
+  analyze();
+  stepNature(dt);
+  stepScifi(dt);
+  stepMonsters(dt);
+  stepMission(dt);
+  stepLife(dt);
+  stepParts(dt);
+  if(glassBroken){ tinkle(Math.min(1, glassBroken/40)); glassBroken = 0; }
+  shakeAmp *= Math.pow(.02, dt);
+}
+function frame(now){
+  const real = Math.min(.1, (now - last)/1000); last = now;
+  if(!paused){ acc += real * (slow ? .25 : 1); let n = 0; while(acc >= DT && n < 4){ step(DT); acc -= DT; n++; } if(n === 4) acc = 0; }
+  if(viewMode === 'iso') redrawIso(150); else redrawStatic();
+  draw(now/1000);
+  hud();
+  requestAnimationFrame(frame);
+}
+
+// test-adgang (bruges af test/harness.js)
+window.KKD = { WX, HY, DZ, GY, N, mat, bid, get bld(){ return bld; }, get bodies(){ return bodies; }, get active(){ return active; }, get parts(){ return parts; }, get shots(){ return shots; },
+  stats, genCity, start, explode, fire, fireScreen, pickIso, setView, get viewMode(){ return viewMode; }, redrawIso, step, redrawStatic, draw, idx, frontZ, structural, MAT, TOOLS, cam, view, resize, analyze, get seeds(){ return seeds; },
+  placeC4, detonate, get charges(){ return charges; }, drillTick, pickScreen, drill, loadTop, saveTop, showTop, setTool, get session(){ return session; },
+  get people(){ return people; }, get cars(){ return cars; }, get buses(){ return buses; }, alarm, stepLife, findGaps, get gaps(){ return gaps; },
+  startQuake, strikeLightning, ignite, igniteAround, get burning(){ return burning; }, startTornado, startTsunami, get tornados(){ return tornados; }, get waves(){ return waves; }, floodH, get quake(){ return quake; },
+  setTheme(t){ theme = t; themeSel.value = t; },
+  newDesign, designCells, buildDesign, placeDesign, loadDesigns, saveDesigns, autoWindows, resizeDesign, openDesigner, validDesign,
+  act, MISSIONS, startMission, exitMission, get mission(){ return mission; }, misProgress, misUnlocked, holdAt,
+  spawnMonster, steerMonster, get monsters(){ return monsters; }, groundAt,
+  laserTick, spawnHole, get holes(){ return holes; }, ufoSteer, setBeam, get ufo(){ return ufo; }, laser, get theme(){ return theme; }, THEMES, setCat, WATER, WOOD };
+
+// --- PWA: version, service worker, kun på langs når spillet er installeret
+/* Hæv APP_VERSION ved hver rettelse, der lægges ud. Den vises nederst i missionsmenuen og bestemmer
+   service workerens cache, så en ny version slår igennem hos alle. */
+const APP_VERSION = '1.0.0';
+$('appVer').textContent = 'Kølerkildekøbing Destroy · version ' + APP_VERSION;
+const installedMQ = window.matchMedia ? matchMedia('(display-mode: fullscreen), (display-mode: standalone)') : {matches:false};
+function syncInstalled(){
+  const inst = installedMQ.matches || (typeof navigator !== 'undefined' && navigator.standalone === true);
+  document.body.classList.toggle('pwa', inst);
+  if(inst && typeof screen !== 'undefined' && screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});   // virker på Android; iOS viser beskeden
+}
+syncInstalled();
+if(installedMQ.addEventListener) installedMQ.addEventListener('change', syncInstalled);
+if(typeof navigator !== 'undefined' && 'serviceWorker' in navigator && location.protocol !== 'file:')
+  navigator.serviceWorker.register('service-worker.js?v=' + encodeURIComponent(APP_VERSION)).catch(e => console.log('[KK Destroy] service worker ikke startet', e));
+
+resize();
+setView(viewMode);
+setMuted(muted);
+start(randomSeed());
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

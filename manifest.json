@@ -1,0 +1,17 @@
+{
+  "name": "Kølerkildekøbing Destroy",
+  "short_name": "KK Destroy",
+  "description": "Smadr byen med bomber, naturkatastrofer, sci-fi-våben og monstre – eller klar missionerne.",
+  "lang": "da",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0c151e",
+  "theme_color": "#0c151e",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
