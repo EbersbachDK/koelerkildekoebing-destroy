@@ -351,11 +351,11 @@ K.start('test-1');
 K.start('test-1'); K.resize();
 {
   const B = K.bld.find(b => b && b.z0 < 15 && b.x0 > 80);
-  K.explode((B.x0+B.x1)/2, B.y0 + 3, B.z0, 9, 3); run(4);
+  K.explode((B.x0+B.x1)/2, B.y0 + 3, B.z0, 11, 3.2); K.explode((B.x0+B.x1)/2, B.y0 + 10, B.z0, 9, 3); run(4);
   const sx = ((B.x0+B.x1)/2 - K.cam.x)*K.cam.s, sy = K.view.h - (K.GY + 14 - K.cam.y)*K.cam.s;
   K.ufoSteer(sx, sy); run(4);
   ok(K.ufo && Math.abs(K.ufo.x - (B.x0+B.x1)/2) < 2, `UFO flyver hen til målet (x ${K.ufo && K.ufo.x.toFixed(1)})`);
-  K.setBeam(true); run(4);
+  K.setBeam(true); run(6);
   const cargo = K.ufo.cargo.length, held = K.people.filter(q => q.st === 'held' || q.st === 'beam').length + K.cars.filter(c => c.st === 'held' || c.st === 'beam').length;
   ok(cargo > 20, `trækstrålen løfter ${cargo} brokker og ${held} figurer/biler`);
   K.setBeam(false);
@@ -446,7 +446,7 @@ const SOLVE = {
   h1(){ for(const B of K.bld.filter(b => b && b.type === 'kran')){ const x = B.x0 + 8; for(const lx of [x, x + 8]) for(const y of [K.GY + 2, K.GY + 12]) K.act('c4', {x: lx, y, z: 5}); } K.detonate(); },
   h2(){ for(let k=0;k<5;k++){ K.act('lyn', null, {x: K.WX*(k + .5)/5, y: 40}); run(.5); } },
   h3(){ for(const B of standing(b => b.type === 'pakhus').slice(0, 4)){ for(let f=1; f*4 < B.y1 - B.y0; f++) for(const fx of [.3, .7]){ const x = Math.round(B.x0 + (B.x1 - B.x0)*fx), y = B.y0 + 4*f, z = Math.round((B.z0 + B.z1)/2); K.act('ild', {x, y, z}); } } },
-  h4(){ for(let k=0; k<14 && !K.mission.result; k++){ const c = K.cars.filter(c => !c.dead && c.st === 'drive' && c.x > 20 && c.x < K.WX - 20)[0]; if(!c) break; K.act(k < 8 ? 'raket' : 'bombe', {x: Math.round(c.x), y: c.y, z: c.z}); run(1.5); } },
+  h4(){ run(2); for(let k=0; k<14 && !K.mission.result; k++){ const c = K.cars.filter(c => !c.dead && c.st === 'drive' && c.v > 1 && c.x > 40 && c.x < K.WX - 40)[0]; if(!c) break; const lead = c.dir*c.v*(k < 8 ? .9 : 1.6); K.act(k < 8 ? 'raket' : 'bombe', {x: Math.round(c.x + lead), y: c.y, z: c.z}); run(1.5); } },
   h5(){ const B = standing(b => b.z0 < 15 && b.x0 > 60)[0]; for(let k=0;k<4;k++){ K.act('bombe', topOf(B, (k-1.5)*3)); run(1.5); } run(3);
         K.act('ufo', null, {x:(B.x0+B.x1)/2, y:K.GY + 16}); run(3); K.setBeam(true);
         for(let k=0; k<60 && !K.mission.result; k++){ K.act('ufo', null, {x:(B.x0+B.x1)/2 + Math.sin(k*.4)*6, y:K.GY + 16}); run(1); } K.setBeam(false); },
@@ -526,6 +526,21 @@ K.exitMission(); K.setTheme('storby'); K.start('test-1'); K.setView('side');
   store['kkd-mix'] = '0';
   K.start('test-1'); ok(K.bld.every(b => !b || b.type !== 'egen'), 'uden blanding: kun standardhuse');
 }
+
+// 15) byens ender: bakker med tunnel, ingen kant at køre ud over
+for(const th of ['storby', 'havneby', 'landsby']){
+  K.exitMission(); K.setTheme(th); K.start('kant-' + th); K.setView('side'); K.resize();
+  const hill = x => { let n = 0; for(let y=K.GY; y<K.GY+15; y++) for(let z=4; z<20; z++) if(K.mat[K.idx(x, y, z)]) n++; return n; };
+  const tunnelOpen = x => [0, 1, 2].every(z => [0, 1, 2, 3].every(dy => !K.mat[K.idx(x, K.GY + dy, z)]));
+  const inHill = K.bld.filter(b => b && b.type !== 'kran' && (b.x0 < 11 || b.x1 > K.WX - 12)).length;
+  ok(hill(3) > 100 && hill(K.WX - 4) > 100 && tunnelOpen(3) && tunnelOpen(K.WX - 4) && inHill === 0, `${th}: bakke med åben tunnel i begge ender, ingen huse i bakkerne`);
+  let minX = 1e9, maxX = -1e9, wraps = 0; const last = K.cars.map(c => c.x);
+  for(let k=0; k<40*60; k++){ K.step(1/60); K.cars.forEach((c, i) => { if(c.st === 'drive'){ minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x); if(Math.abs(c.x - last[i]) > 50) wraps++; last[i] = c.x; } }); }
+  ok(minX >= 1 && maxX <= K.WX - 2 && wraps > 0, `${th}: bilerne bliver i byen (x ${minX.toFixed(1)}–${maxX.toFixed(1)}) og kører gennem tunnellerne (${wraps} gange på 40 s)`);
+  K.cam.s = 0.1; K.cam.x = -500; K.resize();
+  ok(K.cam.x >= -.6 && K.cam.x + K.view.w/K.cam.s <= K.WX + .1, `${th}: kameraet kan ikke se ud over byens ender`);
+}
+K.setTheme('storby');
 
 console.log(fails ? `\n${fails} FEJL` : '\nALT OK');
 process.exit(fails ? 1 : 0);
