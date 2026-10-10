@@ -3488,6 +3488,7 @@ function step(dt){
   shakeAmp *= Math.pow(.02, dt);
 }
 function frame(now){
+  if(window.KKD_EXTERNAL){ requestAnimationFrame(frame); return; }   // styres udefra (fx 3D-prøven), som selv kalder step()
   const real = Math.min(.1, (now - last)/1000); last = now;
   if(!paused){ acc += real * (slow ? .25 : 1); let n = 0; while(acc >= DT && n < 4){ step(DT); acc -= DT; n++; } if(n === 4) acc = 0; }
   if(viewMode === 'iso'){ redrawIso(150); renderBodiesIso(); } else { redrawStatic(); renderBodiesSide(); }
@@ -3505,7 +3506,7 @@ window.KKD = { WX, HY, DZ, GY, N, mat, bid, get bld(){ return bld; }, get bodies
   setTheme(t){ theme = t; themeSel.value = t; },
   newDesign, designCells, buildDesign, placeDesign, loadDesigns, saveDesigns, autoWindows, resizeDesign, openDesigner, validDesign,
   renderBodiesSide, renderBodiesIso, get bovSpix(){ return bovSpix; }, get bovIpix(){ return bovIpix; },
-  nuke, get nukes(){ return nukes; },
+  nuke, get nukes(){ return nukes; }, cellColor,
   act, MISSIONS, startMission, exitMission, get mission(){ return mission; }, misProgress, misUnlocked, holdAt,
   spawnMonster, steerMonster, get monsters(){ return monsters; }, groundAt,
   laserTick, spawnHole, get holes(){ return holes; }, ufoSteer, setBeam, get ufo(){ return ufo; }, laser, get theme(){ return theme; }, THEMES, setCat, WATER, WOOD };
@@ -3513,7 +3514,7 @@ window.KKD = { WX, HY, DZ, GY, N, mat, bid, get bld(){ return bld; }, get bodies
 // --- PWA: version, service worker, kun på langs når spillet er installeret
 /* Hæv APP_VERSION ved hver rettelse, der lægges ud. Den vises nederst i missionsmenuen og bestemmer
    service workerens cache, så en ny version slår igennem hos alle. */
-const APP_VERSION = '1.0.4';
+const APP_VERSION = '1.0.5';
 $('appVer').textContent = 'Kølerkildekøbing Destroy · version ' + APP_VERSION;
 const installedMQ = window.matchMedia ? matchMedia('(display-mode: fullscreen), (display-mode: standalone)') : {matches:false};
 function syncInstalled(){
