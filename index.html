@@ -50,6 +50,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .tool:focus-visible,.ctl:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #stage{position:relative;flex:1;min-height:0}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#cv3{position:absolute;inset:0;width:100%;height:100%;display:block}
+#cv3[hidden]{display:none}
 #hud{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
 .chip{background:rgba(12,21,30,.82);border:1px solid var(--line);border-radius:10px;padding:5px 11px;display:flex;flex-direction:column;line-height:1.05}
 .chip span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
@@ -146,6 +148,7 @@ body.mission .tool kbd{display:inline!important}
 #desList button.cur{border-color:var(--accent)}
 @media (max-width:1500px){.ctl:not(#bView) span.lbl{display:none}.ctl{padding:7px 10px}}
 @media (max-width:1400px){.tool span.lbl,.tool kbd{display:none}.tool[aria-pressed="true"] span.lbl{display:inline}.tool{padding:7px 10px}}
+@media (max-width:1320px){.tool[aria-pressed="true"] span.lbl{display:none}}
 @media (max-width:980px),(max-height:480px){.tool span.lbl,.ctl span.lbl,.tool kbd{display:none}#help{display:none}.tool,.ctl{padding:6px 11px}}
 @media (max-width:900px){#hud .chip:nth-child(2){display:none}}
 @media (max-width:560px){.brand .t1{font-size:11px}.brand .t2{font-size:17px}}
@@ -299,6 +302,7 @@ body.mission .tool kbd{display:inline!important}
     </div>
   </header>
   <div id="stage">
+    <canvas id="cv3" aria-hidden="true" hidden></canvas>
     <canvas id="cv" aria-label="Byen"></canvas>
     <div id="hud">
       <div class="chip"><span>Skade</span><b id="hDmg">0 kr.</b></div>
@@ -1000,8 +1004,9 @@ function fire(tool, wx, wy, zIn){
   const off = viewMode === 'iso' ? z*.5 : 0;          // i 3D ligger dybere celler længere til højre og op
   if(tool === 'raket'){
     const viewL = cam.x, viewR = cam.x + view.w/cam.s;
-    const fromLeft = wx + off > (viewL+viewR)/2;
-    const sx = (fromLeft ? viewL - 4 : viewR + 4) - off, sy = wy + 10 + Math.random()*6;
+    const fromLeft = viewMode === '3d' ? wx > WX/2 : wx + off > (viewL+viewR)/2;
+    // i 3D kommer raketten skråt ned fra himlen (ellers kunne den starte inde i et hus ved siden af målet)
+    const sx = viewMode === '3d' ? wx + (fromLeft ? -45 : 45) : (fromLeft ? viewL - 4 : viewR + 4) - off, sy = viewMode === '3d' ? Math.max(wy + 30, HY + 4) : wy + 10 + Math.random()*6;
     const d = Math.hypot(wx-sx, wy-sy);
     shots.push({kind:'raket', x:sx, y:sy, z, vx:(wx-sx)/d*110, vy:(wy-sy)/d*110, t:0});
   } else if(tool === 'meteor'){
@@ -1009,7 +1014,7 @@ function fire(tool, wx, wy, zIn){
     shots.push({kind:'meteor', x:sx, y:sy, z, vx:(wx-sx)/d*80, vy:(wy-sy)/d*80, t:0});
     noise(2.2, 900, .3, 1.2, sat);
   } else {
-    const top = cam.y + view.h/cam.s + 6 - off;
+    const top = viewMode === '3d' ? HY + 12 : cam.y + view.h/cam.s + 6 - off;
     shots.push({kind:tool, x:wx, y:Math.max(top, wy+8), z, vx:0, vy: TOOLS[tool] && TOOLS[tool].nuke ? -9 : -12, t:0, ty: wy});
     if(TOOLS[tool] && TOOLS[tool].nuke){ tone('sine', 1300, 380, 3.2, .07); toast(tool === 'brint' ? 'Brintbombe på vej!' : 'Atombombe på vej!'); alarm(wx, wy, 120); }
   }
@@ -1031,6 +1036,7 @@ function fireScreen(sx, sy){
   }
   if(tool === 'bor' || tool === 'laser' || tool === 'ufo' || MON_TOOLS[tool]) return;
   const h = pickScreen(sx, sy), u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s;
+  if(viewMode === '3d'){ const g = R3 && R3.ground(sx, sy); act(tool, h, g ? {x: g.x, y: GY, z: Math.round(g.z)} : null); return; }
   act(tool, h, viewMode === 'iso' ? {x: u - 4.5, y: v - 4.5, z: 9} : {x: u, y: v});
 }
 // udfør et våben mod et mål (h = ramt celle eller null, w = punkt i verden). Tæller forbruget i missioner.
@@ -1168,6 +1174,7 @@ function sparks(x, y, z, n){
   for(let k=0; k<n && parts.length < 3000; k++) parts.push({k:'spark', x, y, z, vx:(Math.random()-.5)*22, vy:Math.random()*14, life:.25 + Math.random()*.2, max:.45});
 }
 function pickScreen(sx, sy){
+  if(viewMode === '3d') return R3 ? R3.pick(sx, sy) : null;
   const u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s;
   if(viewMode === 'iso') return pickIso(u, v);
   const x = Math.round(u), y = Math.round(v);
@@ -1545,7 +1552,8 @@ function stepHole(hl, dt){
 
 function ufoSteer(sx, sy){
   const u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s, z = 8;
-  const x = viewMode === 'iso' ? u - z*.5 : u, y = viewMode === 'iso' ? v - z*.5 : v;
+  let x = viewMode === 'iso' ? u - z*.5 : u, y = viewMode === 'iso' ? v - z*.5 : v;
+  if(viewMode === '3d' && R3){ const q = R3.planeZ(sx, sy, z); x = q.x; y = q.y; }
   if(!ufo && !useTool('ufo')) return;
   ufoAt(x, y);
 }
@@ -3075,7 +3083,8 @@ function draw(t){
 // =====================================================================
 let tool = 'raket', paused = false, slow = false, seed = '';
 let viewMode = 'side';
-try { if(localStorage.getItem('kkd-view') === 'iso') viewMode = 'iso'; } catch(_) {}
+let want3d = false;
+try { const vv = localStorage.getItem('kkd-view'); if(vv === 'iso') viewMode = 'iso'; else if(vv === '3d') want3d = true; } catch(_) {}
 const $ = id => document.getElementById(id);
 const toastEl = $('toast'); let toastT = 0;
 function toast(text){ toastEl.textContent = text; toastEl.classList.remove('off'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.add('off'), 2200); }
@@ -3092,17 +3101,17 @@ function setCat(c){
 }
 for(const b of document.querySelectorAll('.cat')) b.addEventListener('click', () => setCat(b.dataset.cat));
 const HOLD = {bor:1, laser:1, ufo:1, gorilla:1, kaiju:1, tentakel:1};
-function worldAt(sx, sy){ const u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s; return viewMode === 'iso' ? {x: u - 4.5, y: v - 4.5} : {x: u, y: v}; }
+function worldAt(sx, sy, zp){ if(viewMode === '3d' && R3) return R3.planeZ(sx, sy, zp === undefined ? 9 : zp); const u = cam.x + sx/cam.s, v = cam.y + (view.h - sy)/cam.s; return viewMode === 'iso' ? {x: u - 4.5, y: v - 4.5} : {x: u, y: v}; }
 function holdStart(sx, sy){
   if(mission && (mission.result || !(mission.uses[tool] > 0))){ if(mission.uses[tool] !== undefined && !mission.result) toast('Ikke mere tid tilbage til dette våben'); return; }
   if(tool === 'bor'){ drill.on = true; drill.sx = sx; drill.sy = sy; drill.acc = .05; }
   else if(tool === 'laser'){ laser.on = true; laser.sx = sx; laser.sy = sy; laser.acc = 1/40; }
   else if(tool === 'ufo') ufoSteer(sx, sy);
-  else if(MON_TOOLS[tool]){ const w = worldAt(sx, sy); act(tool, null, w); }
+  else if(MON_TOOLS[tool]){ const w = worldAt(sx, sy, MON_DEF[tool] ? MON_DEF[tool].z : 9); act(tool, null, w); }
 }
 const MON_TOOLS = {gorilla:1, kaiju:1, tentakel:1};
 function holdMove(sx, sy){
-  if(MON_TOOLS[tool]){ const w = worldAt(sx, sy); const m = monsterOf(tool); if(m) steerMonster(tool, w.x, w.y); return; }
+  if(MON_TOOLS[tool]){ const w = worldAt(sx, sy, MON_DEF[tool] ? MON_DEF[tool].z : 9); const m = monsterOf(tool); if(m) steerMonster(tool, w.x, w.y); return; }
   if(tool === 'bor'){ drill.sx = sx; drill.sy = sy; }
   else if(tool === 'laser'){ laser.sx = sx; laser.sy = sy; }
   else if(tool === 'ufo') ufoSteer(sx, sy);
@@ -3122,16 +3131,35 @@ for(const b of document.querySelectorAll('.tool')) b.addEventListener('click', (
 function setPause(v){ paused = v; $('bPause').setAttribute('aria-pressed', String(v)); }
 function setSlow(v){ slow = v; $('bSlow').setAttribute('aria-pressed', String(v)); $('slowTag').hidden = !v; }
 $('bPause').addEventListener('click', () => setPause(!paused));
-function setView(v){
-  if(v === viewMode && $('bView').getAttribute('aria-pressed') === String(v === 'iso')) return;
-  const mid = cam.x + view.w/cam.s/2 + (v === 'iso' ? DZ*.25 : -DZ*.25) * (v === viewMode ? 0 : 1);
-  viewMode = v;
-  $('bView').setAttribute('aria-pressed', String(v === 'iso'));
-  $('bViewLbl').textContent = v === 'iso' ? 'Side' : '3D';
-  try { localStorage.setItem('kkd-view', v); } catch(_) {}
-  cam.x = mid - view.w/cam.s/2; clampCam();
+// --- ægte 3D (three.js) hentes først, når man vælger den
+const VIEW_NEXT = {side: 'iso', iso: '3d', '3d': 'side'}, VIEW_LBL = {side: 'Skrå', iso: '3D', '3d': 'Side'};
+let R3 = null, r3Loading = null;
+function load3D(){
+  if(R3) return Promise.resolve(true);
+  if(!r3Loading) r3Loading = import('./render3d.js').then(mod => {
+      R3 = mod.create(window.KKD, $('cv3'), {mobile: window.matchMedia ? matchMedia('(pointer:coarse)').matches : false});
+      return true;
+    }).catch(e => {
+      console.log('[KK Destroy] 3D kunne ikke starte', e); r3Loading = null;
+      toast(location.protocol === 'file:' ? '3D virker kun, når spillet åbnes fra nettet eller er installeret' : '3D kunne ikke starte på denne enhed');
+      return false;
+    });
+  return r3Loading;
 }
-$('bView').addEventListener('click', () => setView(viewMode === 'iso' ? 'side' : 'iso'));
+function setView(v){
+  if(v === '3d' && !R3){ toast('Starter 3D …'); load3D().then(ok => { if(ok) setView('3d'); else if(viewMode === '3d') setView('side'); }); return; }
+  const was = viewMode;
+  if(was !== v && was !== '3d' && v !== '3d'){ const mid = cam.x + view.w/cam.s/2 + (v === 'iso' ? DZ*.25 : -DZ*.25); viewMode = v; cam.x = mid - view.w/cam.s/2; }
+  viewMode = v;
+  $('cv3').hidden = v !== '3d';
+  $('bView').setAttribute('aria-pressed', String(v !== 'side'));
+  $('bViewLbl').textContent = VIEW_LBL[v];
+  try { localStorage.setItem('kkd-view', v); } catch(_) {}
+  clampCam();
+  if(v === '3d') R3.resize();
+  else { colDirty.fill(1); anyDirty = true; isoDirty.fill(1); isoAny = true; }
+}
+$('bView').addEventListener('click', () => setView(VIEW_NEXT[viewMode]));
 $('bSlow').addEventListener('click', () => setSlow(!slow));
 $('bReset').addEventListener('click', () => mission ? startMission(mission.def.id) : start(seed));
 $('bNew').addEventListener('click', () => { exitMission(); start(randomSeed()); });
@@ -3268,6 +3296,7 @@ function hud(force){
 const ptrs = new Map(); let gesture = null;
 cv.addEventListener('contextmenu', e => e.preventDefault());
 cv.addEventListener('pointerdown', e => {
+  if(e.isPrimary) ptrs.clear();          // ny berøring: glem fingre, hvis "slip" er gået tabt
   audioInit();
   cv.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId, {x:e.offsetX, y:e.offsetY, sx:e.offsetX, sy:e.offsetY, t:performance.now(), btn:e.button});
@@ -3285,14 +3314,14 @@ cv.addEventListener('pointermove', e => {
   if(gesture.multi && ptrs.size >= 2){
     const [a,b] = [...ptrs.values()];
     const d = Math.hypot(a.x-b.x, a.y-b.y), mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
-    zoomAt(mx, my, d / (gesture.d || d));
-    cam.x -= (mx - gesture.mx)/cam.s; cam.y += (my - gesture.my)/cam.s; clampCam();
+    if(viewMode === '3d' && R3){ R3.zoom(d / (gesture.d || d)); R3.pan(mx - gesture.mx, my - gesture.my); }
+    else { zoomAt(mx, my, d / (gesture.d || d)); cam.x -= (mx - gesture.mx)/cam.s; cam.y += (my - gesture.my)/cam.s; clampCam(); }
     gesture.d = d; gesture.mx = mx; gesture.my = my;
   } else if(!gesture.multi && gesture.hold){
     holdMove(p.x, p.y);
   } else if(!gesture.multi){
     if(!gesture.moved && Math.hypot(p.x - p.sx, p.y - p.sy) > 9) gesture.moved = true;
-    if(gesture.moved){ cam.x -= dx/cam.s; cam.y += dy/cam.s; clampCam(); }
+    if(gesture.moved){ if(viewMode === '3d' && R3){ if(p.btn === 2) R3.pan(dx, dy); else R3.orbit(dx, dy); } else { cam.x -= dx/cam.s; cam.y += dy/cam.s; clampCam(); } }
   }
 });
 function endPtr(e){
@@ -3305,7 +3334,7 @@ function endPtr(e){
 }
 cv.addEventListener('pointerup', endPtr);
 cv.addEventListener('pointercancel', endPtr);
-cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * .0015)); }, {passive:false});
+cv.addEventListener('wheel', e => { e.preventDefault(); const f = Math.exp(-e.deltaY * .0015); if(viewMode === '3d' && R3) R3.zoom(f); else zoomAt(e.offsetX, e.offsetY, f); }, {passive:false});
 function zoomAt(sx, sy, f){
   const wx = cam.x + sx/cam.s, wy = cam.y + (view.h - sy)/cam.s;
   cam.s *= f; clampCam();
@@ -3323,17 +3352,17 @@ window.addEventListener('keydown', e => {
   else if(k === 'm') setMuted(!muted);
   else if(k === ' '){ e.preventDefault(); setPause(!paused); }
   else if(k === 's') setSlow(!slow);
-  else if(k === 'v') setView(viewMode === 'iso' ? 'side' : 'iso');
+  else if(k === 'v') setView(VIEW_NEXT[viewMode]);
   else if(k === 'r') (mission ? startMission(mission.def.id) : start(seed));
   else if(k === 'n'){ exitMission(); start(randomSeed()); }
   else if(k === 'o') showMis($('misPanel').hidden);
   else if(k === 'h') openDesigner();
-  else if(k === 'arrowleft'){ cam.x -= 40/cam.s*4; clampCam(); }
-  else if(k === 'arrowright'){ cam.x += 40/cam.s*4; clampCam(); }
+  else if(k === 'arrowleft'){ if(viewMode === '3d' && R3) R3.pan(60, 0); else { cam.x -= 40/cam.s*4; clampCam(); } }
+  else if(k === 'arrowright'){ if(viewMode === '3d' && R3) R3.pan(-60, 0); else { cam.x += 40/cam.s*4; clampCam(); } }
   else if(k === '+' || k === '='){ zoomAt(view.w/2, view.h/2, 1.2); }
   else if(k === '-'){ zoomAt(view.w/2, view.h/2, 1/1.2); }
 });
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => { resize(); if(R3 && viewMode === '3d') R3.resize(); });
 
 // --- lyd: Web Audio-syntese, ingen filer. master -> kompressor/limiter; brag går gennem en forvrænger (SAT),
 // så de kan høres i små højttalere; basdrønet går udenom
@@ -3487,12 +3516,24 @@ function step(dt){
   if(glassBroken){ tinkle(Math.min(1, glassBroken/40)); glassBroken = 0; }
   shakeAmp *= Math.pow(.02, dt);
 }
+// i 3D: det almindelige lærred er gennemsigtigt og viser kun lysglimt og boremaskinens sigte
+function drawOverlay3D(t){
+  ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); ctx.clearRect(0, 0, view.w, view.h);
+  if(flash > 0){ ctx.fillStyle = `rgba(235,240,255,${Math.min(1, flash*1.6).toFixed(3)})`; ctx.fillRect(0, 0, view.w, view.h); }
+  if(drill.on){
+    const r = 16; ctx.save(); ctx.translate(drill.sx, drill.sy); ctx.rotate(t*25);
+    ctx.strokeStyle = drill.hit ? '#ffcf5a' : 'rgba(255,255,255,.8)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+    for(let k=0;k<4;k++){ ctx.rotate(Math.PI/2); ctx.beginPath(); ctx.moveTo(r*.35, 0); ctx.lineTo(r*.95, 0); ctx.stroke(); }
+    ctx.restore();
+  }
+}
 function frame(now){
   if(window.KKD_EXTERNAL){ requestAnimationFrame(frame); return; }   // styres udefra (fx 3D-prøven), som selv kalder step()
   const real = Math.min(.1, (now - last)/1000); last = now;
   if(!paused){ acc += real * (slow ? .25 : 1); let n = 0; while(acc >= DT && n < 4){ step(DT); acc -= DT; n++; } if(n === 4) acc = 0; }
-  if(viewMode === 'iso'){ redrawIso(150); renderBodiesIso(); } else { redrawStatic(); renderBodiesSide(); }
-  draw(now/1000);
+  if(viewMode === '3d' && R3){ R3.render(real); drawOverlay3D(now/1000); }
+  else { if(viewMode === 'iso'){ redrawIso(150); renderBodiesIso(); } else { redrawStatic(); renderBodiesSide(); } draw(now/1000); }
   hud();
   requestAnimationFrame(frame);
 }
@@ -3506,7 +3547,7 @@ window.KKD = { WX, HY, DZ, GY, N, mat, bid, get bld(){ return bld; }, get bodies
   setTheme(t){ theme = t; themeSel.value = t; },
   newDesign, designCells, buildDesign, placeDesign, loadDesigns, saveDesigns, autoWindows, resizeDesign, openDesigner, validDesign,
   renderBodiesSide, renderBodiesIso, get bovSpix(){ return bovSpix; }, get bovIpix(){ return bovIpix; },
-  nuke, get nukes(){ return nukes; }, cellColor,
+  nuke, get nukes(){ return nukes; }, cellColor, get bolts(){ return bolts; }, get flash(){ return flash; }, get shake(){ return shakeAmp; }, MON_DEF, get R3(){ return R3; }, load3D,
   act, MISSIONS, startMission, exitMission, get mission(){ return mission; }, misProgress, misUnlocked, holdAt,
   spawnMonster, steerMonster, get monsters(){ return monsters; }, groundAt,
   laserTick, spawnHole, get holes(){ return holes; }, ufoSteer, setBeam, get ufo(){ return ufo; }, laser, get theme(){ return theme; }, THEMES, setCat, WATER, WOOD };
@@ -3514,7 +3555,7 @@ window.KKD = { WX, HY, DZ, GY, N, mat, bid, get bld(){ return bld; }, get bodies
 // --- PWA: version, service worker, kun på langs når spillet er installeret
 /* Hæv APP_VERSION ved hver rettelse, der lægges ud. Den vises nederst i missionsmenuen og bestemmer
    service workerens cache, så en ny version slår igennem hos alle. */
-const APP_VERSION = '1.0.5';
+const APP_VERSION = '1.1.0';
 $('appVer').textContent = 'Kølerkildekøbing Destroy · version ' + APP_VERSION;
 const installedMQ = window.matchMedia ? matchMedia('(display-mode: fullscreen), (display-mode: standalone)') : {matches:false};
 function syncInstalled(){
@@ -3529,6 +3570,7 @@ if(typeof navigator !== 'undefined' && 'serviceWorker' in navigator && location.
 
 resize();
 setView(viewMode);
+if(want3d) setView('3d');
 setMuted(muted);
 start(randomSeed());
 requestAnimationFrame(frame);

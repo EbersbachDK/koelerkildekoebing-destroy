@@ -6,7 +6,8 @@ const CACHE = 'kkd-' + VERSION;
 const FILES = [
   './', 'index.html', 'manifest.json',
   'fonts/saira-stencil.woff2', 'fonts/barlow-500.woff2', 'fonts/barlow-600.woff2', 'fonts/barlow-700.woff2',
-  'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-512-maskable.png'
+  'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-512-maskable.png',
+  'render3d.js', 'vendor/three.module.min.js'
 ];
 
 self.addEventListener('install', e => {
