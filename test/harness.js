@@ -542,5 +542,18 @@ for(const th of ['storby', 'havneby', 'landsby']){
 }
 K.setTheme('storby');
 
+// 16) atombombe og brintbombe
+for(const [kind, vm] of [['atom', 'side'], ['brint', 'iso']]){
+  K.exitMission(); K.setTheme('storby'); K.start('test-1'); K.setView(vm); K.resize();
+  K.fire(kind, 180, K.GY + 3, 8);
+  const y0 = K.shots[0].y; let ys = y0, e = [];
+  for(let k=0; k<30*60 && K.shots.length; k++){ ys = K.shots[0].y; e.push(...run(1/60)); }
+  ok(K.nukes.length === 1 && (kind === 'atom' || ys > K.GY + 8), `${kind}: falder i faldskærm og ${kind === 'brint' ? 'sprænger i luften (højde ' + ys.toFixed(0) + ')' : 'sprænger ved nedslaget'}`);
+  e = e.concat(run(25)); for(let k=0; k<30 && K.bodies.length; k++) e.push(...run(1));
+  try { if(vm === 'iso') K.redrawIso(K.WX); else K.redrawStatic(); K.draw(1); } catch(err){ e.push('draw ' + err.message); }
+  ok(e.length === 0 && bad() === 0 && K.stats.fallen >= 8 && K.nukes.length === 0, `${kind} i ${vm}: ${K.stats.fallen} af ${K.bld.filter(b => b && !b.gone).length} bygninger faldt, ramt ${K.stats.hit}, svampeskyen forsvandt igen` + (e[0] ? ' ' + e[0] : ''));
+}
+K.setView('side');
+
 console.log(fails ? `\n${fails} FEJL` : '\nALT OK');
 process.exit(fails ? 1 : 0);

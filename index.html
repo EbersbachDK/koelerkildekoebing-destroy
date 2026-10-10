@@ -225,6 +225,12 @@ body.mission .tool kbd{display:inline!important}
       <button class="tool" data-cat="eks" data-tool="mega" aria-pressed="false" title="Megabombe (3)">
         <svg width="22" height="22" viewBox="0 0 24 24"><ellipse cx="12" cy="13" rx="9" ry="6" fill="currentColor"/><path d="M3 13h18M12 7V3" stroke="var(--bg)" stroke-width="1.5"/><path d="M12 3l-3 2h6z" fill="currentColor"/></svg>
         <span class="lbl">Megabombe</span><kbd>3</kbd></button>
+      <button class="tool" data-cat="eks" data-tool="atom" aria-pressed="false" title="Atombombe – falder i faldskærm (4)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 10L8.5 4a9 9 0 0 1 7 0zM10.3 13L3.4 13a9 9 0 0 1 3.5-6zM13.7 13l3.4 6a9 9 0 0 1-10.2 0z" fill="currentColor" transform="rotate(30 12 12)"/></svg>
+        <span class="lbl">Atombombe</span><kbd>4</kbd></button>
+      <button class="tool" data-cat="eks" data-tool="brint" aria-pressed="false" title="Brintbombe – sprænger i luften over byen (5)">
+        <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8 7v10M16 7v10M8 12h8" stroke="var(--bg)" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <span class="lbl">Brintbombe</span><kbd>5</kbd></button>
       <button class="tool" data-cat="eks" data-tool="c4" aria-pressed="false" title="C4 – placér op til 8, tryk Udløs (4)">
         <svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="2" fill="currentColor"/><rect x="6" y="10" width="8" height="5" fill="var(--bg)"/><circle cx="17.5" cy="12.5" r="1.6" fill="var(--danger)"/><path d="M8 7V4h8v3" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
         <span class="lbl">C4</span><kbd>4</kbd></button>
@@ -949,6 +955,8 @@ const TOOLS = {
   bombe: {r:7,   p:2.5, name:'Bombe'},
   mega:  {r:12,  p:3.2, name:'Megabombe'},
   meteor:{r:13,  p:4.0, name:'Meteor'},
+  atom:  {r:24,  p:4.6, name:'Atombombe',  nuke:1},
+  brint: {r:34,  p:5.4, name:'Brintbombe', nuke:2},
   c4:    {r:5,   p:3.0, name:'C4'}
 };
 let glassBroken = 0;                 // til glaslyd
@@ -1002,7 +1010,8 @@ function fire(tool, wx, wy, zIn){
     noise(2.2, 900, .3, 1.2, sat);
   } else {
     const top = cam.y + view.h/cam.s + 6 - off;
-    shots.push({kind:tool, x:wx, y:Math.max(top, wy+8), z, vx:0, vy:-12, t:0});
+    shots.push({kind:tool, x:wx, y:Math.max(top, wy+8), z, vx:0, vy: TOOLS[tool] && TOOLS[tool].nuke ? -9 : -12, t:0, ty: wy});
+    if(TOOLS[tool] && TOOLS[tool].nuke){ tone('sine', 1300, 380, 3.2, .07); toast(tool === 'brint' ? 'Brintbombe på vej!' : 'Atombombe på vej!'); alarm(wx, wy, 120); }
   }
   whoosh(tool);
 }
@@ -1064,7 +1073,10 @@ function stepShots(dt){
   for(let k=shots.length-1; k>=0; k--){
     const s = shots[k];
     s.t += dt;
-    if(s.kind !== 'raket' && s.kind !== 'meteor') s.vy -= 40*dt;
+    const NK = TOOLS[s.kind] && TOOLS[s.kind].nuke;
+    if(NK) s.vy += (-9 - s.vy)*Math.min(1, dt*2);                     // faldskærm
+    else if(s.kind !== 'raket' && s.kind !== 'meteor') s.vy -= 40*dt;
+    if(s.kind === 'brint' && s.y <= Math.max(GY + 12, (s.ty || GY) + 10)){ nuke(s.x, s.y, s.z, TOOLS.brint); shots.splice(k, 1); continue; }   // luftsprængning
     const steps = Math.ceil(Math.hypot(s.vx, s.vy)*dt / .5);
     let hit = false;
     for(let q=0; q<steps && !hit; q++){
@@ -1084,8 +1096,8 @@ function stepShots(dt){
       }
     }
     if(s.kind === 'raket' && Math.random() < .8) parts.push({k:'smoke', z:s.z, x:s.x - s.vx*.01, y:s.y - s.vy*.01, vx:(Math.random()-.5)*2, vy:1+Math.random()*2, life:1.2, max:1.2, r:.8});
-    if(hit){ const T = TOOLS[s.kind]; explode(s.x, s.y, s.z, T.r, T.p); shots.splice(k,1); }
-    else if(s.t > 6 || s.x < -60 || s.x > WX+60) shots.splice(k,1);
+    if(hit){ const T = TOOLS[s.kind]; if(T.nuke) nuke(s.x, s.y, s.z, T); else explode(s.x, s.y, s.z, T.r, T.p); shots.splice(k,1); }
+    else if(s.t > (NK ? 25 : 6) || s.x < -60 || s.x > WX+60) shots.splice(k,1);
     if(s.kind === 'meteor'){
       for(let q=0;q<3 && parts.length < 2900;q++) parts.push({k: q ? 'fire' : 'smoke', z:s.z, x:s.x - s.vx*.02*q, y:s.y - s.vy*.02*q, vx:(Math.random()-.5)*3, vy:(Math.random()-.5)*3, life:q ? .5 : 1.6, max:q ? .5 : 1.6, r: q ? 1.4 : 1.6});
       if(hit){ igniteAround({x:Math.round(s.x), y:Math.max(1, Math.round(s.y)), z:s.z}, 4); shake(22); }
@@ -1867,7 +1879,7 @@ function drawMonsters(pX, pY, s, iso, t){
 // MISSIONER – 24 baner med faste byer, begrænsede våben, mål og stjerner
 // =====================================================================
 const INF = Infinity;
-const ALL_TOOLS = () => ({raket:INF, bombe:INF, mega:INF, c4:INF, bor:INF, skaelv:INF, lyn:INF, ild:INF, tornado:INF, tsunami:INF, laser:INF, sorthul:INF, meteor:INF, ufo:INF, gorilla:INF, kaiju:INF, tentakel:INF});
+const ALL_TOOLS = () => ({raket:INF, bombe:INF, mega:INF, atom:INF, brint:INF, c4:INF, bor:INF, skaelv:INF, lyn:INF, ild:INF, tornado:INF, tsunami:INF, laser:INF, sorthul:INF, meteor:INF, ufo:INF, gorilla:INF, kaiju:INF, tentakel:INF});
 const MISSIONS = [
   {id:'s1', theme:'storby', seed:'mission-storby', title:'Første smæk', desc:'Vælt en bygning med højst 5 bomber.', tools:{bombe:5}, goal:{type:'fell', n:1}, stars:{type:'left', t:[3, 1]}},
   {id:'s2', theme:'storby', seed:'mission-storby', title:'Højhuset skal ned', desc:'Vælt det højeste hus i forreste række – uden at ramme naboerne.', tools:{c4:8, bombe:1}, goal:{type:'target', pick:'tallest'}, stars:{type:'collat', t:[0, 1]}},
@@ -2211,6 +2223,92 @@ function desSave(){
   if(desIdx >= 0 && desIdx < list.length) list[desIdx] = JSON.parse(JSON.stringify(des));
   else { list.push(JSON.parse(JSON.stringify(des))); desIdx = list.length - 1; }
   saveDesigns(list); syncDesigner(); toast(`${des.name} er gemt`);
+}
+
+// =====================================================================
+// ATOMVÅBEN – atombombe og brintbombe: ildkugle, trykbølge, svampesky
+// =====================================================================
+let nukes = [];
+function nuke(x, y, z, T){
+  const big = T.nuke === 2, r = T.r;
+  explode(x, y, Math.max(0, Math.min(DZ-1, z)), r, T.p);             // selve ildkuglen
+  // trykbølgen: ruder springer, tagsten og løse dele flyver, træ og tage antændes – i et stort område
+  const R = r*(big ? 2.6 : 2.2);
+  for(const b of bld){
+    if(!b || b.gone) continue;
+    const cx = (b.x0 + b.x1)/2, d = Math.abs(cx - x);
+    if(d > R + (b.x1 - b.x0)/2) continue;
+    const f = Math.max(0, 1 - d/R);
+    let seedI = -1;
+    for(let yy=b.y0; yy<HY; yy++) for(let zz=b.z0; zz<=b.z1; zz++) for(let xx=b.x0; xx<=b.x1; xx++){
+      const i = idx(xx, yy, zz), v = mat[i]; if(!v || bid[i] !== b.id) continue;
+      const m = v & MM;
+      if(seedI < 0 && structural(v)) seedI = i;
+      if(m === GLASS){ if(Math.random() < f*.9) removeCell(i); }
+      else if(m === ROOF || m === LEAF){ if(Math.random() < f*.6) loosen(i); else if(Math.random() < f*.3) ignite(i); }
+      else if(m === WOOD && Math.random() < f*.25) ignite(i);
+    }
+    // trykbølgen svækker bærende konstruktioner – tæt på styrter de sammen, længere ude kun de svage
+    b.k *= 1 - (big ? .7 : .6)*f;
+    if(seedI >= 0) seeds.push(seedI);
+  }
+  for(const p of people){
+    if(p.st === 'saved' || p.st === 'lost') continue;
+    const dx = p.x - x, d = Math.hypot(dx, (p.y - y)*.6) || .1;
+    if(d < R*.9) hitPerson(p, Math.sign(dx)*(14 + 20*(1 - d/R)), 8 + 10*(1 - d/R));
+    else panic(p);
+  }
+  for(const v of cars.concat(buses)){ const dx = v.x - x, d = Math.abs(dx); if(d < R) wreck(v, Math.sign(dx)*(10 + 16*(1 - d/R)), 6 + 8*(1 - d/R)); }
+  for(const b of bodies){ const dx = b.cx - x, dy = b.cy - y, d = Math.hypot(dx, dy) || 1; if(d < R*1.3){ const f = (1 - d/(R*1.3))*30/Math.sqrt(b.n/50 + 1); b.vx += dx/d*f; b.vy += dy/d*f + 4; b.w += (Math.random()-.5)*.6; b.state = 'fall'; } }
+  for(const b of bld) if(b) b.alarm = true;
+  nukes.push({x, y, z, r, big, t:0});
+  flash = big ? 1.6 : 1.1;
+  shake(big ? 45 : 32);
+  nukeSound(big);
+  toast(big ? 'BRINTBOMBE!' : 'ATOMBOMBE!');
+}
+function stepNukes(dt){ for(let k=nukes.length-1; k>=0; k--){ const n = nukes[k]; n.t += dt; if(n.t > (n.big ? 22 : 17)) nukes.splice(k, 1); else if(n.t < 3) shake(n.big ? 10 : 6); } }
+function resetNukes(){ nukes = []; }
+function nukeSound(big){
+  if(!AC) return;
+  tone('sine', 55, 18, big ? 7 : 5, 1, 0, master);
+  noise(big ? 8 : 6, 700, 1, .02, sat);
+  noise(.25, 6000, .7, .002, sat, 'highpass');
+  noise(big ? 9 : 7, 160, .7, 1.2, sat);                         // efterdrøn
+}
+// svampeskyen tegnes som bløde, lysende kugler: ildkugle -> stamme og hat, der stiger og bliver grå
+function drawNukes(pX, pY, s, iso, t){
+  for(const n of nukes){
+    const T = n.t, life = n.big ? 22 : 17, fade = Math.min(1, (life - T)/4), R = n.r*(n.big ? 1.25 : 1);
+    const gy = Math.max(GY, n.y - (n.big ? 0 : 2)), z = n.z;
+    // trykbølgens ring langs jorden
+    if(T < 2.2){ const a = 1 - T/2.2, rr = R*(.4 + T*1.6); ctx.strokeStyle = `rgba(255,255,255,${(a*.7).toFixed(3)})`; ctx.lineWidth = Math.max(2, s*(1.5 + 2*a));
+      ctx.beginPath(); ctx.ellipse(pX(n.x, z), pY(GY, z), rr*s, rr*s*.18, 0, 0, 7); ctx.stroke();
+      if(n.big && T > .4){ const rr2 = R*(T - .4)*1.6; ctx.beginPath(); ctx.ellipse(pX(n.x, z), pY(GY, z), rr2*s, rr2*s*.18, 0, 0, 7); ctx.stroke(); } }
+    const heat = Math.max(0, 1 - T/5);                              // fra ild til røg
+    const rise = Math.min(1, T/7), capY = gy + R*(.5 + 1.9*rise), capR = R*(.45 + .55*Math.min(1, T/5));
+    const blob = (wx, wy, r, hot) => {
+      const X = pX(wx, z), Y = pY(wy, z), rad = Math.max(2, r*s);
+      const g = ctx.createRadialGradient(X - rad*.25, Y - rad*.25, rad*.1, X, Y, rad);
+      const h = Math.max(0, Math.min(1, hot));
+      const c1 = `rgba(${(255*h + 150*(1-h))|0},${(220*h + 145*(1-h))|0},${(120*h + 138*(1-h))|0},${(fade*.95).toFixed(3)})`;
+      const c2 = `rgba(${(230*h + 110*(1-h))|0},${(90*h + 104*(1-h))|0},${(30*h + 100*(1-h))|0},${(fade*.85).toFixed(3)})`;
+      g.addColorStop(0, c1); g.addColorStop(.7, c2); g.addColorStop(1, `rgba(90,85,80,0)`);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(X, Y, rad, 0, 7); ctx.fill();
+    };
+    if(T < 1.2){ blob(n.x, gy + R*.3, R*(.4 + T*.5), 1); continue; }   // ildkuglen
+    // stammen
+    const steps = 9;
+    for(let k=0; k<steps; k++){ const q = k/(steps-1), wy = gy + (capY - gy)*q*.92, w = R*(.22 + .1*Math.sin(q*3 + T)) * (1 - q*.35);
+      blob(n.x + Math.sin(q*5 + T*.7)*R*.05, wy, w, heat*(1 - q*.4) + .15*(1 - q)); }
+    // hatten: en ring af kugler (torus) + midte
+    const ring = 12;
+    for(let k=0; k<ring; k++){ const a = k/ring*Math.PI*2 + T*.15, wx = n.x + Math.cos(a)*capR*.85, wy = capY + Math.sin(a)*capR*.28;
+      blob(wx, wy, capR*.42, heat*.9 + .1); }
+    blob(n.x, capY + capR*.15, capR*.6, heat + .15);
+    // glødende fod ved jorden de første sekunder
+    if(heat > 0){ const X = pX(n.x, z), Y = pY(GY, z), rad = R*1.2*s; const g = ctx.createRadialGradient(X, Y, 0, X, Y, rad); g.addColorStop(0, `rgba(255,170,60,${(heat*.7).toFixed(3)})`); g.addColorStop(1, 'rgba(255,90,20,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(X, Y, rad, 0, 7); ctx.fill(); }
+  }
 }
 
 // =====================================================================
@@ -2920,12 +3018,23 @@ function draw(t){
     if(p.kind === 'meteor'){ const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, s*3.2); gr.addColorStop(0, 'rgba(255,240,180,1)'); gr.addColorStop(.35, 'rgba(255,140,40,.9)'); gr.addColorStop(1, 'rgba(255,80,0,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, s*3.2, 0, 7); ctx.fill(); ctx.fillStyle = '#3a2a22'; ctx.beginPath(); ctx.arc(0, 0, s*1.3, 0, 7); ctx.fill(); }
     else if(p.kind === 'raket'){ ctx.rotate(Math.atan2(-p.vy, p.vx)); ctx.fillStyle = '#e8e2d6'; ctx.fillRect(-s*1.6, -s*.35, s*2.4, s*.7); ctx.fillStyle = '#d33'; ctx.fillRect(s*.6, -s*.35, s*.5, s*.7);
       ctx.fillStyle = 'rgba(255,190,80,.9)'; ctx.beginPath(); ctx.moveTo(-s*1.6, -s*.3); ctx.lineTo(-s*(2.4 + Math.random()), 0); ctx.lineTo(-s*1.6, s*.3); ctx.fill(); }
+    else if(p.kind === 'atom' || p.kind === 'brint'){
+      const r = (p.kind === 'brint' ? 2.2 : 1.8) * s;
+      ctx.strokeStyle = 'rgba(230,230,230,.8)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-r*.6, -r); ctx.lineTo(-r*2.4, -r*4.2); ctx.moveTo(r*.6, -r); ctx.lineTo(r*2.4, -r*4.2); ctx.moveTo(0, -r); ctx.lineTo(0, -r*4.6); ctx.stroke();
+      ctx.fillStyle = p.kind === 'brint' ? '#e8eef5' : '#f4f1e6'; ctx.beginPath(); ctx.ellipse(0, -r*4.4, r*2.8, r*1.1, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#d33'; ctx.beginPath(); ctx.ellipse(0, -r*4.4, r*2.8, r*1.1, 0, Math.PI, Math.PI*1.33); ctx.lineTo(0, -r*4.4); ctx.fill();
+      ctx.fillStyle = '#3a4048'; ctx.beginPath(); ctx.ellipse(0, 0, r*.85, r*1.25, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ffd60a'; ctx.fillRect(-r*.85, -r*.25, r*1.7, r*.5);
+      ctx.fillStyle = '#1b1f2c'; ctx.font = `800 ${Math.max(8, r*.55)|0}px 'Barlow Condensed', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.kind === 'brint' ? 'H' : '☢', 0, 0);
+    }
     else { const r = (p.kind === 'mega' ? 1.6 : 1) * s; ctx.fillStyle = '#2a2f36'; ctx.beginPath(); ctx.ellipse(0, 0, r*.8, r*1.2, 0, 0, 7); ctx.fill();
       ctx.fillStyle = '#545c66'; ctx.fillRect(-r*.7, -r*1.9, r*1.4, r*.6); }
     ctx.restore();
   }
   drawNature(pX, pY, s, iso, t);
   drawScifi(pX, pY, s, iso, t);
+  drawNukes(pX, pY, s, iso, t);
   drawMonsters(pX, pY, s, iso, t);
   drawMissionTarget(pX, pY, s, t);
   // C4-ladninger (blinker hurtigt, når de er udløst)
@@ -3131,7 +3240,7 @@ function start(sd){
   seed = sd; seedIn.value = sd;
   session = {id: Date.now() + Math.random(), seed: theme + ':' + sd};
   bestBefore = ((loadTop()[session.seed] || [])[0] || {kr:0}).kr; recordShown = false;
-  resetNature(); resetScifi(); resetMonsters();
+  resetNature(); resetScifi(); resetMonsters(); resetNukes();
   charges = []; timers = []; drill.on = false; glassBroken = 0;
   genCity(sd, theme, startingMission ? null : (mixOn() ? loadDesigns() : null)); genBackdrop(sd);
   bodies = []; parts = []; shots = []; seeds = []; active = []; inAct.fill(0);
@@ -3370,6 +3479,7 @@ function step(dt){
   analyze();
   stepNature(dt);
   stepScifi(dt);
+  stepNukes(dt);
   stepMonsters(dt);
   stepMission(dt);
   stepLife(dt);
@@ -3395,6 +3505,7 @@ window.KKD = { WX, HY, DZ, GY, N, mat, bid, get bld(){ return bld; }, get bodies
   setTheme(t){ theme = t; themeSel.value = t; },
   newDesign, designCells, buildDesign, placeDesign, loadDesigns, saveDesigns, autoWindows, resizeDesign, openDesigner, validDesign,
   renderBodiesSide, renderBodiesIso, get bovSpix(){ return bovSpix; }, get bovIpix(){ return bovIpix; },
+  nuke, get nukes(){ return nukes; },
   act, MISSIONS, startMission, exitMission, get mission(){ return mission; }, misProgress, misUnlocked, holdAt,
   spawnMonster, steerMonster, get monsters(){ return monsters; }, groundAt,
   laserTick, spawnHole, get holes(){ return holes; }, ufoSteer, setBeam, get ufo(){ return ufo; }, laser, get theme(){ return theme; }, THEMES, setCat, WATER, WOOD };
@@ -3402,7 +3513,7 @@ window.KKD = { WX, HY, DZ, GY, N, mat, bid, get bld(){ return bld; }, get bodies
 // --- PWA: version, service worker, kun på langs når spillet er installeret
 /* Hæv APP_VERSION ved hver rettelse, der lægges ud. Den vises nederst i missionsmenuen og bestemmer
    service workerens cache, så en ny version slår igennem hos alle. */
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.4';
 $('appVer').textContent = 'Kølerkildekøbing Destroy · version ' + APP_VERSION;
 const installedMQ = window.matchMedia ? matchMedia('(display-mode: fullscreen), (display-mode: standalone)') : {matches:false};
 function syncInstalled(){
