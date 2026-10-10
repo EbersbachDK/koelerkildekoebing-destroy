@@ -61,3 +61,10 @@ Alle 10 faser er bygget og testet (`node test/harness.js index.html` → 78 tjek
 10. PWA (manifest, service worker, ikoner, offline, kun på langs når installeret) ✔ – **GitHub Pages og Capacitor/Play Store mangler**: kræver brugerens ja til at oprette repo og offentliggøre.
 
 Versionen sættes kun i `const APP_VERSION` i index.html (vises nederst i missionsmenuen og styrer service workerens cache). Ikoner: `py tools/make_icons.py`.
+
+## Ægte 3D (1.1.0, 2026-10-10)
+
+Tredje visning ved siden af Side og Skrå: `render3d.js` (three.js r160 lagt i `vendor/`, hentes med `import()` først når 3D vælges; virker ikke fra `file://`). Læser kun spillets tilstand (`window.KKD`) – simuleringen er fælles.
+- Byen: blokke 32 x 16 (hele dybden), kun synlige sider, vertex-AO, teksturatlas, sol + skygger (fra på telefoner), ACES, tåge. Ændringer findes ved at sammenligne med en kopi af `mat` hvert 2. billede; ombygning inden for et tidsbudget (8 ms, 5 ms på telefon).
+- Alt andet som instanser/net/punkt-sprites (figurer, biler, brokker, støv/ild/røg, våben, natur, sci-fi, monstre, svampeskyer).
+- Målt på svag bærbar (Intel HD 520): 45–55 fps i ro, 31–42 fps under kollaps/tsunami/atombombe, enkelte hak ≤ 80 ms.
